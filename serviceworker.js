@@ -37,9 +37,13 @@
 	self.addEventListener('notificationclick',showWindow);
 
 
-	setTimeout(()=>{
-		showNotification('background notification');
-	},3000)
+	var n=4;
+	var interval=setInterval(()=>{
+		showNotification('background notification '+n+' '+(new Date()).toUTCString());
+		if(n<1)
+			clearTimeout(interval);
+		n--;
+	},5000);
 
 	function showNotification(msg){
 		let options={tag: 'backgroundNotification',icon:"/favicon.ico"};
