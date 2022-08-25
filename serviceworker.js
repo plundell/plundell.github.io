@@ -46,8 +46,13 @@
 	},5000);
 
 	function showNotification(msg){
-		let options={tag: 'backgroundNotification',icon:"/favicon.ico"};
-		globalScope.registration.showNotification(msg,options);
+		try{
+			let options={tag: 'backgroundNotification',icon:"/favicon.ico"};
+			globalScope.registration.showNotification(msg,options);
+			console.log(msg);
+		}catch(e){
+			console.error(e);
+		}
 	}
 
 
