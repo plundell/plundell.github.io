@@ -37,13 +37,7 @@
 	self.addEventListener('notificationclick',showWindow);
 
 
-	var n=4;
-	var interval=setInterval(()=>{
-		showNotification('background notification '+n+' '+(new Date()).toUTCString());
-		if(n<1)
-			clearTimeout(interval);
-		n--;
-	},5000);
+
 
 	function showNotification(msg){
 		try{
@@ -54,6 +48,20 @@
 			console.error(e);
 		}
 	}
+
+
+	//Show 10 notifications over 50 seconds, then unregister the service worker
+	var n=10;
+	var interval=setInterval(()=>{
+	showNotification('background notification '+n+' '+(new Date()).toUTCString());
+		if(n<1){
+			clearTimeout(interval);
+			globalScope.registration.unregister();
+		}
+		n--;
+	},5000);
+
+
 
 
 	/**
