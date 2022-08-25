@@ -41,6 +41,15 @@ function notify(msg){
 	
 }
 
+
+
+function unregisterClearAndReload(){
+	log('unregistering service worker, clearing cache and reloading page...');
+	navigator.serviceWorker.ready
+		.then(registration=>registration.unregister())
+		.then(()=>location.reload(true))
+}
+
 function sendFiveNotices(){
 	notify("Notifying 5 times...");
 	var i=5
