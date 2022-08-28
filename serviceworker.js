@@ -1,5 +1,12 @@
 (function(globalScope){
 
+	const ts=(new Date()).getTime();
+	function getDurration(){
+		let durr=(new Date()).getTime()-ts;
+		return "	t = "+durr;
+	}
+	console.log("Running serviceworker.js..."+(new Date()).toUTCString(),globalScope);
+
 	const config={
 		waitForServiceWorkerBoot:false //if true we don't enable navigationPreload
 		,primeCacheList:[ //list of urls to fetch and cache on install event
@@ -11,12 +18,6 @@
 	}
 
 
-	const ts=(new Date()).getTime();
-	function getDurration(){
-		let durr=(new Date()).getTime()-ts;
-		return "	t = "+durr;
-	}
-	console.warn("SERVICE WORKER LOADED"+getDurration(),globalScope);
 
 
 	//1. The first event to fire is 'install'. This is where you might create a cache and populate it. It will 
@@ -53,10 +54,12 @@
 	//Show 10 notifications over 50 seconds, then unregister the service worker
 	var n=10;
 	var interval=setInterval(()=>{
-	showNotification('background notification '+n+' '+(new Date()).toUTCString());
 		if(n<1){
 			clearTimeout(interval);
+			showNotification('unregistering! '+(new Date()).toUTCString());
 			globalScope.registration.unregister();
+		}else{
+			showNotification('background notification '+n+' '+(new Date()).toUTCString());
 		}
 		n--;
 	},5000);

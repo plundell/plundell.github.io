@@ -75,14 +75,18 @@ function enableNotifications(){
 	}
 }
 
+function installApp(){
+	
+}
+
 function initNotifications(){
 
 	log("initializing notifications...");
 	try{
 		if(Notification){
-			log("Notifications ARE supported");
+			// log("Notifications ARE supported");
 			if(Notification.permission==='granted'){
-				notify("Notifications already granted");
+				log("Notifications already granted");
 				blockButton();
 			}else if(Notification.permission==='denied'){
 				log("Notifications ARE supported but have already been denied");
@@ -108,12 +112,12 @@ function blockButton(){
 
 async function registerServiceWorker(){
 	try{
-		log("initializing service worker...");
+		// log("initializing service worker...");
 
 		if (!'serviceWorker' in navigator) {
 			throw new Error("serviceWorker not supported");
 		}else{
-			log("service workers are supported")
+			// log("service workers are supported")
 		}
 
 		let registration=await navigator.serviceWorker.register('/serviceworker.js',{scope: '/'})
@@ -133,13 +137,20 @@ async function registerServiceWorker(){
 }
 
 
-
+function showPopup(){
+	document.getElementById('overlay').classList.remove('hidden');
+}
+function hidePopup(elem,evt){
+	if(elem==evt.target){
+		document.getElementById('overlay').classList.add('hidden');
+	}
+}
 
 
 function init(){
-	log("initializing..."+Date())
-	registerServiceWorker();
-	initNotifications();
+	log("Running app.js..."+(new Date()).toUTCString())
+	// registerServiceWorker();
+	// initNotifications();
 	console.log('app.js init() ran to end',self,document,window);
 }
 
