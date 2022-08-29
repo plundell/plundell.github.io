@@ -2,12 +2,50 @@
   font-family: Montserrat;
   src: url(montserrat.woff2);
 }
+/* For mobile phones: */
+@media only screen and (max-width: 768px) {
+	.desktop{
+		display: none !important;
+	}
+}
+/* For desktop: */
+@media only screen and (min-width: 769px) {
+	.mobile{
+		display: none !important;
+	}
+}
 body{
 	display:flex ;
 	flex-direction: column;
 	font-family: Montserrat;
 	height: 100vh;
 }
+
+
+.hidden{
+	display: none !important;
+
+}
+
+.fade-out{
+	visibility: hidden;
+	opacity: 0;
+	transition: visibility 0s 1s, opacity 1s linear;
+}
+.fade-in{
+/*	visibility: visible;
+	opacity: 1;
+	transition: opacity 1s linear;*/
+	animation: fadeIn 1s;
+}
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+
+
+/* NAV BAR */
 nav{
 	display:flex;
 	align-items: center;
@@ -17,11 +55,16 @@ nav{
 nav > * {
 	display: flex;
 }
-img {
+nav img {
 	height: 2.5rem;
 }
-.top-item{
-}
+
+
+
+
+
+
+/* MAIN CONTENT */
 main{
 	display: flex;
 	flex-direction: column;
@@ -33,7 +76,6 @@ main > * {
 	font-size: 1.125rem;
     line-height: 1.75rem;
 }
-
 #welcome{
 	font-size: 3.75rem;
 	font-weight: bold;
@@ -51,17 +93,29 @@ main > * {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
+
+
+
+
+
+
+
+
+
+
+
+/* BUTTONS */
 button{
 	border-radius: 8px;
     padding: 0.75rem 2rem;
     margin: 0.5rem;
     border: 0;
 }
-button:hover{
+button:enabled:hover{
 	cursor: pointer;
 	-webkit-filter: brightness(90%);
 }
-button:active{
+button:enabled:active{
 	-webkit-filter: brightness(100%);
   	-webkit-box-shadow: inset 0px 0px 0.5rem #c1c1c1;
      -moz-box-shadow: inset 0px 0px 0.5rem #c1c1c1;
@@ -81,9 +135,11 @@ button:active{
 	background: linear-gradient(15deg, rgb(220 5 187) 0%, rgb(94 51 155) 100%);
     color: rgb(255 255 255);
 }
-.hidden{
-	display: none !important;
-}
+
+
+
+
+/* INSTALL POPUP */
 #overlay{
 	position: fixed;
     bottom: 0;
@@ -111,4 +167,45 @@ button:active{
 	flex: 1 1 0%; /*fill out background to max-width*/
 }
 
+
+.cross::before{
+	content: 'X';
+	color: red;
+	font-weight: bold;
+	
+}
+.checkmark::before{
+	content: '\2713';
+	color: green;
+	font-weight: bold;
+}
+.info::before{
+	content: 'i';
+	color: blue;
+	font-weight: bold;
+}
+
+.working {
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+}
+.working:after {
+  content: " ";
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 8px;
+  border-radius: 50%;
+  border: 6px solid #fff;
+  border-color: #fff transparent #fff transparent;
+  animation: working-spin 1.2s linear infinite;
+}
+@keyframes working-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

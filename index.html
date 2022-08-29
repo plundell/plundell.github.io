@@ -11,47 +11,67 @@
     <![endif]-->
 	<script type="text/javascript" src="app.js"></script>
 </head>
-<body>
-	
-
-<nav>
-	<div>
-		<img src="/logo-test-black.svg" alt="Paragast">
-	</div>
-	<div>
-		<button class="btn-white">Sign In</button>
-		<button class="btn-purple">Start now</button>
-	</div>
-</nav>
-<main>
-	<h1 id="welcome">Where your <span class="txt-purple">community</span> <br> comes to life.</h1>
-	<div id="tagline">Paragast is the result of creators & fans working together.</div>
-	<button class="btn-purple">Access our beta today</button>
-	<button class="btn-pink" onclick="showPopup()">Install our app</button>
-</main>
-<div id="overlay" class="hidden" onclick="hidePopup(this,event)">
-	<div id="popup">
-		<h2>Paragast WebApp</h2>
-		<div>
-			<h3>What is a webapp?</h3>
-			<p>
-				Unlike a <i>native</i> mobile app which you download from the app store, a <i>webapp</i> is just
-				a shortcut on your homescreen to a webpage which runs in your browser. However, thanks to modern
-				web technologies these now work offline, they can check for new messages/content in the background
-				and notify you even when your browser isn't open - <b>just like a native apps!</b>
-			</p>
-			<h3>How to install:</h3>
-			<ol>
-				<li>Allow Paragast to send <i>notifications</i> <button onclick="enableNotifications()">Enable Notifications</button></li>
-				<li>Download and create shortcut on homescreen <button onclick="installApp()">Install</button></li>
-			</ol>
+	<body>
+		<nav>
+			<div>
+				<img class="desktop" src="/logo-name.svg" alt="Paragast" onclick="hardReload()">
+				<img class="mobile" src="/logo.svg" alt="Paragast" onclick="hardReload()">
+			</div>
+			<div>
+				<button class="btn-white">Sign In</button>
+				<button class="btn-purple desktop">Start now</button>
+			</div>
+		</nav>
+		<main>
+			<h1 id="welcome">Where your <span class="txt-purple">community</span> <br> comes to life.</h1>
+			<div id="tagline">Paragast is the result of creators & fans working together.</div>
+			<button class="btn-purple">Access our beta today</button>
+			<button class="btn-pink" onclick="showPopup()">Install our app</button>
+			<button class="btn-pink hidden" onclick="demoApp()">Demo App</button>
+		</main>
+		<div id="overlay" class="hidden" onclick="hidePopup(this,event)">
+			<div id="popup">
+				<h2>Paragast Web App</h2>
+				<div>
+					<h3>What is a web app?</h3>
+					<p>
+						A <i>web app</i> runs in your browser, but thanks to modern web technologies these work 
+						much like <i>native apps</i>: 
+					</p>
+					<ul>
+						<li>Live on your home screen</li>
+						<li>Store data offline</li>
+						<li>Run in the background</li>
+						<li>Notify you of new messages/content</li>
+					</ul>
+					<h3>How to install:</h3>
+					<ol id='install'>
+						<li class="notification">
+							Allow Paragast to send <i>notifications</i> 
+							<div style="display:inline-block">
+								<button class="enable" onclick="enableNotifications()">Allow</button>
+								<span class="state"></span>
+								<button class="demo" onclick="demoNotification()">Test</button>
+							</div>
+						</li>
+						<li class="service">
+							Install the background service 
+							<div style="display:inline-block">
+								<button class="enable" onclick="enableService()">Install</button>
+								<span class="state"></span>
+								<button class="disable" onclick="disableService()">Uninstall</button>
+							</div>
+						</li>
+						<li>
+							Reload page to run the app
+							<button class="enable" onclick="location.reload()">Reload</button>
+						</li>
+					</ol>
+				</div>
+			</div>
 		</div>
-	</div>
-</div>
-
-</body>
-<script type="text/javascript">
-	//Initialize app which sets up service workers and checks if notifications are supported
-	init(); //defined in app.js
-</script>
+	</body>
+	<script type="text/javascript">
+		initApp();
+	</script>
 </html>
