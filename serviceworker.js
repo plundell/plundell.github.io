@@ -104,6 +104,7 @@
 					console.error(e);
 				}
 			},delay||0)
+			return;
 		}
 
 		,notificationInterval:({tag,msg,options,interval,ttl})=>{
@@ -113,16 +114,18 @@
 
 			clearBackgroundInterval(tag);
 			
+			var i=1
 			globalScope.backgroundIntervals[tag]=setInterval(()=>{
-				public.showNotification({msg,options});
+				public.showNotification({msg+" #"+i,options});
+				i++;
 			},interval)
 
 			setTimeout(()=>clearBackgroundInterval(tag),ttl);
+			return;
 		}
 
-		,clearBackgroundIntervals:()=>{
-			Object.values(globalScope.backgroundIntervals).forEach(clearTimeout);
-		}
+		,clearBackgroundIntervals:()=>Object.values(globalScope.backgroundIntervals).forEach(clearTimeout)
+
 		,clearCache:()=>caches.delete(globalScope.config.cacheName)
 
 		,setupDatabase:async ()=>{
@@ -137,6 +140,7 @@
 			}catch(e){
 				console.error(e);
 			}
+			return;
 		}
 	}
 
@@ -343,7 +347,9 @@
 				}catch(e){
 					var err=e;
 				}
-				globalScope.pageChannel.postMessage({msgId,response,err});
+				let x={msgId,response,err};
+				console.log("service sending response",response)
+				globalScope.pageChannel.postMessage(x);
 			}else{
 				console.error("No such public endpoint:",method,payload,msgId);
 			}

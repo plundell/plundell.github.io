@@ -102,7 +102,7 @@ function Service(){
 
 	const pending={};
 	var id=0;
-	this.send=(method,payload)=>{
+	this.send=(method,payload,timeout)=>{
 		if(!this.connected)
 			return Promise.reject("not connected");
 
@@ -113,7 +113,10 @@ function Service(){
 			let promise=new Promise((res)=>{resolve=res});
 			pending[msgId]=resolve;
 			navigator.serviceWorker.controller.postMessage(msg)
-			return promise;
+			return Promise.race([
+				promise
+				,sleep(timeout||10000).then(()=>Promise.reject('timeout'))
+			]);
 		}catch(e){
 			return Promise.reject(e);
 		}
@@ -242,14 +245,17 @@ async function disableService(){
 
 /* INSTALL POPUP */
 
-function showPopup(){
+function showPopup(which){
 	checkService();
 	checkNotifications();
 	document.getElementById('overlay').classList.remove('hidden');
+	document.getElementById('popup-'+which).classList.remove('hidden');
 }
-function hidePopup(elem,evt){
+function hidePopup(overlay,evt){
 	if(elem==evt.target){
 		document.getElementById('overlay').classList.add('hidden');
+		document.getElementById('popup-install').classList.add('hidden');
+		document.getElementById('popup-demo').classList.add('hidden');
 	}
 }
 function showState(elem,show,tooltip){
@@ -423,18 +429,31 @@ function sleep(ms){
 
 async function showAppContent(){
 	try{
-		//Change text
+		let txt='Welcome to the Paragast <span class="txt-purple">App</span>';
 		let welcome=document.querySelector('#welcome');
-		welcome.classList.add('fade-out');
-		await sleep(1000);
-		welcome.innerHTML='Welcome to the Paragast <span class="txt-purple">App</span>';
-		welcome.classList.replace('fade-out','fade-in');
-		await sleep(300);
+		let demoBtn=document.querySelector('main button.hidden');
+		let installBtn=document.querySelector('.btn-pink');
+		if(window.matchMedia('(display-mode: standalone)').matches) {
+		   //standalone
+			welcome.innerHTML=txt;
+			demoBtn.classList.remove('hidden');
+			installBtn.classList.replace('btn-pink','btn-purple');
+			installBtn.innerText="Uninstall app"
+			document.querySelector('main button').remove();
+		}else{
+			//in browser
+			//Change text
+			welcome.classList.add('fade-out');
+			await sleep(1000);
+			welcome.innerHTML=txt;
+			welcome.classList.replace('fade-out','fade-in');
+			await sleep(300);
 
-		//show demo button 
-		document.querySelector('main button.hidden').classList.replace('hidden','fade-in');
-		//change color of install button
-		document.querySelector('.btn-pink').classList.replace('btn-pink','btn-purple');
+			//show demo button 
+			demoBtn.classList.replace('hidden','fade-in');
+			//change color of install button
+			installBtn.classList.replace('btn-pink','btn-purple');
+		}
 
 	}catch(e){
 		console.error(e);
@@ -468,7 +487,11 @@ async function initApp(){
 
 
 function demoApp(){
+	showPopup('demo');
 	if(service && service.connected){
-		service.send('notificationInterval',{msg:"Paragast is still running",interval:60000})
+		service.backgroundNotification("Demo in progress...",2000);
+		service.send('notificationInterval',{msg:"Paragast notification demo",interval:360000})
+	}else{
+		console.error("Service not connected");
 	}
 }

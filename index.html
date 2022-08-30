@@ -15,8 +15,8 @@
 	<body>
 		<nav>
 			<div>
-				<img class="desktop" src="/logo-name.svg" alt="Paragast" onclick="hardReload()">
-				<img class="mobile" src="/logo.svg" alt="Paragast" onclick="hardReload()">
+				<img class="logo desktop" src="/logo-name.svg" alt="Paragast" onclick="hardReload()">
+				<img class="logo mobile" src="/logo.svg" alt="Paragast" onclick="hardReload()">
 			</div>
 			<div>
 				<button class="btn-white">Sign In</button>
@@ -27,11 +27,11 @@
 			<h1 id="welcome">Where your <span class="txt-purple">community</span> <br> comes to life.</h1>
 			<div id="tagline">Paragast is the result of creators & fans working together.</div>
 			<button class="btn-purple">Access our beta today</button>
-			<button class="btn-pink" onclick="showPopup()">Install our app</button>
+			<button class="btn-pink" onclick="showPopup('install')">Install our app</button>
 			<button class="btn-pink hidden" onclick="demoApp()">Demo App</button>
 		</main>
 		<div id="overlay" class="hidden" onclick="hidePopup(this,event)">
-			<div id="popup">
+			<div id="popup-install" class="hidden">
 				<h2>Paragast Web App</h2>
 				<div>
 					<h3>What is a web app?</h3>
@@ -78,6 +78,12 @@
 							</div>
 						</li>
 					</ol>
+				</div>
+			</div>
+			<div id="popup-demo" class="hidden">
+				<h1>Demo</h1>
+				<div>
+					Currently the demo is simple. It will show you 10 notifications over the next hour...
 				</div>
 			</div>
 		</div>
