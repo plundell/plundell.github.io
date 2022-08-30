@@ -16,12 +16,14 @@ function isServiceRunning(){
 }
 async function isServiceRegistered(){
 	try{
-		if(!'serviceWorker' in navigator){
+		if(isServiceRunning()){
+			return true;
+		}else if(!isServiceSupported()){
 			return false;
 		}else{
 			let registration=await Promise.race([
 				new Promise(res=>setTimeout(()=>res(false),100))
-				,navigator.serviceWorker.ready
+				,navigator.serviceWorker.getRegistration()
 			])
 			return registration && registration.active ? true : false
 		}
@@ -120,8 +122,18 @@ function Service(){
 		this.send('showNotification',{msg,delay}).catch(console.error);
 	}
 
-	//This promise will resolve with this object when the channel is ready for use, see reveice()
 	
+	this.uninstall=async()=>{
+		try{
+			console.log('clearing background intervals...');
+			await this.send('clearBackgroundIntervals');
+			console.log('clearing cached content...');
+			await this.send('clearCache');
+		}catch(e){
+			console.error("Failed to uninstall service",e);
+		}
+
+	}
 
 	const receive=(event)=>{
 		try{	
@@ -179,8 +191,7 @@ async function disableService(){
 	try{
 		if(await isServiceRegistered()){
 			if(service && service.connected){
-				console.log('clearing background intervals...');
-				await service.send('clearAllBackgroundIntervals');
+				await service.uninstall();
 			}
 			console.log('unregistering service worker...');
 			let registration=await navigator.serviceWorker.getRegistration();
@@ -254,6 +265,15 @@ function showState(elem,show,tooltip){
 		if(!elem || !elem.classList){
 			console.error("Not valid element:",elem,show,tooltip);
 		}else{
+			if(!elem.classList.contains('state')){
+				let alt=elem.parentNode.querySelector('.state');
+				if(alt)
+					elem=alt
+				else{
+					console.error("Could not find .state elem from:",elem);
+					return;
+				}
+			}
 			elem.classList.remove('checkmark');
 			elem.classList.remove('cross');
 			elem.classList.remove('info');
@@ -268,9 +288,29 @@ function showState(elem,show,tooltip){
 	}
 }
 
-
-
-
+window.addEventListener('beforeinstallprompt', event=>{
+	console.log('offer to install',event);
+	event.preventDefault();
+	let btn=document.querySelector('.homescreen button')
+	btn.prompt=event;
+	btn.disabled=false;
+})
+function addToHomeScreen(btn){
+	if(!btn.prompt){
+		console.error("Something went wrong, the homescreen button doesn't have the 'prompt' property",btn);
+	}else{
+		btn.prompt.prompt();
+		btn.prompt.userChoice.then(choice=>{
+	        if(choice.outcome=='accepted'){
+		    	console.log('User accepted the A2HS prompt');
+		    	btn.disabled=true;
+		    	showState(btn,'checkmark','Added to homescreen');
+		    }else{
+		    	showState(btn,'cross','User dismissed the A2HS prompt, ie. not added to homescreen');
+		    }
+		});
+	} 
+}
 
 
 
@@ -387,17 +427,15 @@ async function showAppContent(){
 		let welcome=document.querySelector('#welcome');
 		welcome.classList.add('fade-out');
 		await sleep(1000);
-		welcome.innerHTML='Welcome to the Paragast<span class="txt-purple">App</span>';
-		welcome.classList.add('fade-in');
-		welcome.classList.remove('fade-out');
+		welcome.innerHTML='Welcome to the Paragast <span class="txt-purple">App</span>';
+		welcome.classList.replace('fade-out','fade-in');
 		await sleep(300);
 
-		//show demo button and change color of install button
-		let btn=document.querySelector('.btn-pink'); //install
-		btn.classList.replace('btn-pink','btn-purple');
-		btn=document.querySelector('main button.hidden')
-		btn.classList.add('fade-in');
-		btn.classList.remove('hidden');
+		//show demo button 
+		document.querySelector('main button.hidden').classList.replace('hidden','fade-in');
+		//change color of install button
+		document.querySelector('.btn-pink').classList.replace('btn-pink','btn-purple');
+
 	}catch(e){
 		console.error(e);
 	}
@@ -419,6 +457,8 @@ async function initApp(){
 			service.backgroundNotification('Paragast is running in the background',1000);
 			
 			showAppContent();
+
+			await service.send('setupDatabase');
 
 		}
 	}catch(e){

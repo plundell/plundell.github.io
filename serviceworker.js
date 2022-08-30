@@ -7,14 +7,38 @@
 	}
 	console.log("Running serviceworker.js..."+(new Date()).toUTCString(),globalScope);
 
-	const config={
+	globalScope.config=globalScope.config||{
 		waitForServiceWorkerBoot:false //if true we don't enable navigationPreload
-		,primeCacheList:[ //list of urls to fetch and cache on install event
-			'/',
-			'/index.html',
-			'/style.css',
-			'/app.js',
-		]
+		// ,primeCacheList:[ //list of urls to fetch and cache on install event
+		// 	'/',
+		// 	'/index.html',
+		// 	'/style.css',
+		// 	'/app.js',
+		// ]
+		,cacheName:'paragast'
+		,database:{
+			name:'paragast'
+			,stores:[
+				{
+					name:'notifications'
+					,options:{autoIncrement:true}
+					,schema:[
+						{method:'createIndex',args:["timestamp", "timestamp", { unique: true }]}
+					]
+				}
+				,{
+					name:'posts'
+					,options:{autoIncrement:true}
+				}
+				,{
+					name:'last'
+					,options:{autoIncrement:true}
+					,schema:[
+						{method:'createIndex',args:["type", "type", { unique: true }]}
+					]
+				}
+			]
+		}
 	}
 
 
@@ -48,14 +72,26 @@
 		}
 	});
 
-	globalScope.backgroundIntervals={}
 
+
+
+
+
+
+
+
+
+
+	globalScope.backgroundIntervals={}
 	function clearBackgroundInterval(tag){
 		if(globalScope.backgroundIntervals[tag]){
 			clearTimeout(globalScope.backgroundIntervals[tag])
 			delete globalScope.backgroundIntervals[tag]
 		}
 	}
+
+
+
 
 	const public={
 		showNotification:({msg,options,delay})=>{
@@ -84,8 +120,23 @@
 			setTimeout(()=>clearBackgroundInterval(tag),ttl);
 		}
 
-		,clearAllBackgroundIntervals:()=>{
+		,clearBackgroundIntervals:()=>{
 			Object.values(globalScope.backgroundIntervals).forEach(clearTimeout);
+		}
+		,clearCache:()=>caches.delete(globalScope.config.cacheName)
+
+		,setupDatabase:async ()=>{
+			try{
+				globalScope.db=globalScope.db||await createDatabase(globalScope.config.database.name);
+				globalScope.dbStores=globalScope.dbStores||{};
+				for(let s of globalScope.config.database.stores){
+					if(!globalScope.dbStores.hasOwnProperty(s.name))
+						globalScope.dbStores[s.name]=await createObjectStore(s.name,s.options,s.schema);
+				}
+				console.log("Finished setting up database");
+			}catch(e){
+				console.error(e);
+			}
 		}
 	}
 
@@ -119,10 +170,10 @@
 
 			//If opted preload resources and populate the cache
 			try{
-				if(Array.isArray(config.primeCacheList) && config.primeCacheList.length){
-					console.log("priming cache with the following list of resources:",config.primeCacheList)
-					var cache=await caches.open('v1');
-					await cache.addAll(config.primeCacheList);
+				if(Array.isArray(globalScope.config.primeCacheList) && globalScope.config.primeCacheList.length){
+					console.log("priming cache with the following list of resources:",globalScope.config.primeCacheList)
+					var cache=await caches.open(globalScope.config.cacheName);
+					await cache.addAll(globalScope.config.primeCacheList);
 				}else{
 					console.warn("Not priming cache")
 				}
@@ -131,7 +182,7 @@
 			}
 			
 		}catch(e){
-			console.error(e,config.primeCacheList,cache);
+			console.error(e,globalScope.config.primeCacheList,cache);
 		}
 		console.log('FINISHED: install'+getDurration());
 		return;
@@ -147,7 +198,7 @@
 		try{
 			console.log('EVENT: activate'+getDurration());
 			
-			if(!config.waitForServiceWorkerBoot){
+			if(!globalScope.config.waitForServiceWorkerBoot){
 				// If supported, enable navigation preloads. This means that while the service worker is booting up any
 				// requests made of it are dispatched directly to the server which in turn implies that we may start a 
 				// fetch for a resource which is actually cached, ie. we make the request "just in case"
@@ -192,7 +243,7 @@
 			if(!response){ 
 				//Then we ask the server...
 				try{
-					//If config.waitForServiceWorkerBoot==false then we enabled navigationPreloading on the 'activate' event
+					//If globalScope.config.waitForServiceWorkerBoot==false then we enabled navigationPreloading on the 'activate' event
 					//which means that the fetch may already have been performed, otherwise we do so now...
 					src="server-preload";
 					response=await event.preloadResponse; //this resolves with undefined...
@@ -258,7 +309,7 @@
 		try{
 			if(clonedResponse && clonedResponse.status>=200 && clonedResponse.status<300){
 				// responses may only be used once, so we store a clone to the cache
-				let cache = await caches.open('v1');
+				let cache = await caches.open(globalScope.config.cacheName);
 				await cache.put(request, clonedResponse);
 				console.log("Cached "+request.url+getDurration())
 			}else{
@@ -285,7 +336,7 @@
 
 	async function pageMessageHandler({method,payload,msgId}){
 		try{
-			if(public.hasOwnProperty(method)){
+			if(typeof public[method]=='function'){
 				console.info("service calling public endpoint: "+method);
 				try{
 					var response=await public[method](payload);
@@ -345,6 +396,54 @@
 			})
 		);
 	}
+
+
+
+	/* IndexedDB */
+
+	//Creates or opens a IDBDatabase...
+	function createDatabase(name){
+		try{
+			console.log(`Creating indexedDB '${name}'`);
+			let request = indexedDB.open(name);
+			let resolve,reject,promise=new Promise((res,rej)=>{resolve=res;reject=rej;});
+
+			request.onerror=(event)=>{
+				console.error(event);
+				reject("Failed to open IndexedDB");
+			};
+			request.onsuccess=(event)=>{
+				console.log("Opened IndexedDB",event);
+				resolve(event.target.result);
+			};
+
+			return promise;
+		}catch(e){
+			return Promise.reject(e);
+		}
+	}
+
+	//Creates or opens an IDBObjectStore inside a IDBDatabase
+	async function createObjectStore(name,options,schema){
+		if(!globalScope.db)
+			throw new Error("Database hasn't been setup yet");
+		
+		console.log(`Creating indexedDB ObjectStore '${name}'`);
+		let store=db.createObjectStore(name, options);
+		if(schema){
+			for(let rule of schema){
+				store[rule.method].apply(store,rule.args)
+			}
+		}
+		return Promise((resolve,reject)=>{
+			store.transaction.oncomplete=()=>resolve(store);
+			store.transaction.onerror=reject;
+		});
+	}
+
+
+
+
 
 
 })(self)

@@ -90,8 +90,7 @@ main > * {
 	text-align: center;
 }
 #tagline{
-	margin-top: 2rem;
-	margin-bottom: 2rem;
+	margin: 2rem 1rem;
 	color: rgb(102 102 102);
 }
 .txt-purple{
