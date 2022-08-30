@@ -116,7 +116,7 @@
 			
 			var i=1
 			globalScope.backgroundIntervals[tag]=setInterval(()=>{
-				public.showNotification({msg+" #"+i,options});
+				public.showNotification({msg:msg+" #"+i,options});
 				i++;
 			},interval)
 
