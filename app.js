@@ -252,7 +252,7 @@ function showPopup(which){
 	document.getElementById('popup-'+which).classList.remove('hidden');
 }
 function hidePopup(overlay,evt){
-	if(elem==evt.target){
+	if(overlay==evt.target){
 		document.getElementById('overlay').classList.add('hidden');
 		document.getElementById('popup-install').classList.add('hidden');
 		document.getElementById('popup-demo').classList.add('hidden');
