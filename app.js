@@ -387,13 +387,15 @@ async function showAppContent(){
 		let welcome=document.querySelector('#welcome');
 		welcome.classList.add('fade-out');
 		await sleep(1000);
-		welcome.innerHTML='Welcome to the Paragast <span class="txt-purple">App</span>';
+		welcome.innerHTML='Welcome to the Paragast<span class="txt-purple">App</span>';
 		welcome.classList.add('fade-in');
 		welcome.classList.remove('fade-out');
 		await sleep(300);
 
-		//show button
-		let btn=document.querySelector('main button.hidden')
+		//show demo button and change color of install button
+		let btn=document.querySelector('.btn-pink'); //install
+		btn.classList.replace('btn-pink','btn-purple');
+		btn=document.querySelector('main button.hidden')
 		btn.classList.add('fade-in');
 		btn.classList.remove('hidden');
 	}catch(e){

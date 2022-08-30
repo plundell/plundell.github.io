@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "name": "Paragast",
+  "short_name": "Paragast",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fff",
+  "description": "Paragast is the result of creators & fans working together.",
+  "icons": [{
+    "src": "logo.svg",
+    "sizes": "any",
+    "type": "image/svg+xml"
+  }]
+}

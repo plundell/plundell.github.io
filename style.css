@@ -7,6 +7,12 @@
 	.desktop{
 		display: none !important;
 	}
+	nav{
+		padding:  1rem 1.5rem;
+	}
+	html{
+		font-size: 14px;
+	}
 }
 /* For desktop: */
 @media only screen and (min-width: 769px) {

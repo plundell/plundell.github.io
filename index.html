@@ -5,6 +5,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>Paragast - DEMO</title>
+	<link rel="manifest" href="manifest.json">
 	<link rel="stylesheet" href="style.css" />
 	<!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -35,7 +36,7 @@
 				<div>
 					<h3>What is a web app?</h3>
 					<p>
-						A <i>web app</i> runs in your browser, but thanks to modern web technologies these work 
+						A <i>progressive web app (PWA)</i> runs in your browser, but thanks to modern web technologies these work 
 						much like <i>native apps</i>: 
 					</p>
 					<ul>
@@ -48,7 +49,7 @@
 					<ol id='install'>
 						<li class="notification">
 							Allow Paragast to send <i>notifications</i> 
-							<div style="display:inline-block">
+							<div>
 								<button class="enable" onclick="enableNotifications()">Allow</button>
 								<span class="state"></span>
 								<button class="demo" onclick="demoNotification()">Test</button>
@@ -56,7 +57,7 @@
 						</li>
 						<li class="service">
 							Install the background service 
-							<div style="display:inline-block">
+							<div>
 								<button class="enable" onclick="enableService()">Install</button>
 								<span class="state"></span>
 								<button class="disable" onclick="disableService()">Uninstall</button>
@@ -64,7 +65,9 @@
 						</li>
 						<li>
 							Reload page to run the app
-							<button class="enable" onclick="location.reload()">Reload</button>
+							<div>
+								<button class="enable" onclick="location.reload()">Reload</button>
+							</div>
 						</li>
 					</ol>
 				</div>
