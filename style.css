@@ -162,7 +162,7 @@ button:enabled:active{
 	justify-content: center;
 	flex: 1 1 0%;
 }
-#popup{
+.popup{
 	padding: 1rem;
 	background: white;
 	display: flex;
