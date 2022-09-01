@@ -14,11 +14,16 @@ function isServiceSupported(){
 function isServiceRunning(){
 	return isServiceSupported() && navigator.serviceWorker.controller;
 }
+function inStandaloneMode(){
+	return window.matchMedia('(display-mode: standalone)');
+}
 async function isServiceRegistered(){
 	try{
-		if(isServiceRunning()){
-			return true;
-		}else if(!isServiceSupported()){
+		//service can still be running if it's just been unregistered
+		// if(isServiceRunning()){
+		// 	return true;
+		// }else 
+		if(!isServiceSupported()){
 			return false;
 		}else{
 			let registration=await Promise.race([
@@ -60,7 +65,7 @@ function checkService(){
 		isServiceRegistered().then(reg=>{
 			if(reg){
 				button.disabled=true;
-				showState(elem,'info',"A serviceWorker has been registered but it not yet running, reload browser to run");
+				showState(elem,'checkmark',"A serviceWorker has been registered but it not yet running, reload browser to run");
 			}else{
 				button.disabled=false;
 				console.log("serviceWorkers are supported, but you havn't installed one yet")
@@ -240,22 +245,16 @@ async function disableService(){
 
 
 
-
-
-
 /* INSTALL POPUP */
 
-function showPopup(which){
+function showInstall(){
 	checkService();
 	checkNotifications();
 	document.getElementById('overlay').classList.remove('hidden');
-	document.getElementById('popup-'+which).classList.remove('hidden');
 }
-function hidePopup(overlay,evt){
+function hideInstall(overlay,evt){
 	if(overlay==evt.target){
 		document.getElementById('overlay').classList.add('hidden');
-		document.getElementById('popup-install').classList.add('hidden');
-		document.getElementById('popup-demo').classList.add('hidden');
 	}
 }
 function showState(elem,show,tooltip){
@@ -290,33 +289,38 @@ function showState(elem,show,tooltip){
 		}
 
 	}catch(e){
-		console.error(e);
+		console.warn("Could not show state of something",e);
 	}
 }
 
-window.addEventListener('beforeinstallprompt', event=>{
-	console.log('offer to install',event);
-	event.preventDefault();
-	let btn=document.querySelector('.homescreen button')
-	btn.prompt=event;
-	btn.disabled=false;
-})
-function addToHomeScreen(btn){
-	if(!btn.prompt){
-		console.error("Something went wrong, the homescreen button doesn't have the 'prompt' property",btn);
-	}else{
-		btn.prompt.prompt();
-		btn.prompt.userChoice.then(choice=>{
-	        if(choice.outcome=='accepted'){
-		    	console.log('User accepted the A2HS prompt');
-		    	btn.disabled=true;
-		    	showState(btn,'checkmark','Added to homescreen');
-		    }else{
-		    	showState(btn,'cross','User dismissed the A2HS prompt, ie. not added to homescreen');
-		    }
-		});
-	} 
+window.addEventListener('appinstalled', checkHomescreen)
+
+function checkHomescreen(evt){
+	var elem=document.querySelector('#install>.homescreen .state');
+	if(evt){
+		console.log("appinstalled event fired. let's see if getInstalledRelatedApps also contains it...")
+		showState(elem,'checkmark');
+	}
+	navigator.getInstalledRelatedApps().then(arr=>{
+		if(evt){
+			if(arr.length){
+				console.log("navigator.getInstalledRelatedApps() lists the app")
+			}else{
+				console.warn("navigator.getInstalledRelatedApps() does NOT list the app!",evt);
+			}
+		}else{
+			if(arr.length){
+				console.log("App has been added to homescreen")
+				showState(elem,'checkmark');
+			}else{
+				console.log("App has NOT been added to homescreen");
+				showState(elem,'nothing');
+			}
+		}
+	})
 }
+
+
 
 
 
@@ -324,31 +328,35 @@ function addToHomeScreen(btn){
 /* NOTIFICATIONS */
 
 function checkNotifications(){
-	var perm;
-	if(Notification){
-		perm=Notification.permission;
-	}else{
-		perm='unsupported';
+	var perm='unsupported';
+	try{
+		if(Notification){
+			perm=Notification.permission;
+		}
+		let elem=document.querySelector('#install>.notification .state');
+		switch(Notification.permission){
+			case 'default':
+				showState(elem,'nothing');
+				return 'supported';
+			case 'granted':
+				showState(elem,'checkmark',"Notifications have been enabled");
+				break;
+			case 'denied':
+				showState(elem,'cross','You have denied notifications from being shown');
+				break;
+			case 'unsupported':
+				showState(elem,'cross','Notifications are not supported by your browser');
+				break;
+			default:
+				showState(elem,'cross','unknown notification permission: '+Notification.permission);
+				perm='unsupported';
+		}
+		let btn=document.querySelector('#install>.notification .enable');
+		if(btn)
+			btn.disabled=true;
+	}catch(e){
+		console.error(e);
 	}
-	let elem=document.querySelector('#install>.notification .state');
-	switch(Notification.permission){
-		case 'default':
-			showState(elem,'nothing');
-			return 'supported';
-		case 'granted':
-			showState(elem,'checkmark',"Notifications have been enabled");
-			break;
-		case 'denied':
-			showState(elem,'cross','You have denied notifications from being shown');
-			break;
-		case 'unsupported':
-			showState(elem,'cross','Notifications are not supported by your browser');
-			break;
-		default:
-			showState(elem,'cross','unknown notification permission: '+Notification.permission);
-			perm='unsupported';
-	}
-	document.querySelector('#install>.notification .enable').disabled=true;
 	return perm;
 }
 
@@ -361,35 +369,78 @@ function enableNotifications(){
 }
 
 
-function sendNotification(msg,delay){
-	if(checkNotifications()!='granted'){
-		console.warn("Not sending notification");
-		return;
-	}
-	delay=(delay||0);
 
-	if (service && service.connected){
-		service.backgroundNotification(msg,delay);
+
+const notificationDefaults={
+	badge:"/logo.svg"
+	,icon:"/logo.svg"
+	,title:'Paragast'
+};
+function prepareNotificationObj(a,b){
+	var n=Object.assign({
+		tag:Math.round(Math.random()*100000)
+		,timestamp:Date.now()
+	},notificationDefaults);
+
+	if(typeof a=='string'){
+		if(typeof b=='string'){
+			n.title=a;
+			n.body=b;
+		}else{
+			n.body=a
+		}
 	}else{
-		console.log('NOTIFY*:',msg);
-		setTimeout(()=>{
-			try{
-				new Notification(msg, {icon:"/favicon.ico",tag:'foregroundNotification'});
-			}catch(e){
-				console.error(e);
-			} 	
-		},delay);
+		Object.assign(n,msgOrObj);
 	}
-
-
+	n.body=n.body||n.msg||n.description||'Check Paragast app'
+	return n;
 }
+
+function showNotification(){
+	try{
+		if(!Notification || Notification.permission!='granted'){
+			console.warn("Not allowed to show notifications");
+			showToast.apply(this,arguments);
+		}else{
+			let obj=prepareNotificationObj.apply(this,arguments)
+			console.log("NOTIFY:",obj);
+			new Notification(obj.title, obj);
+		}
+	}catch(e){
+		console.error(e);
+	} 	
+}
+
+function showToast(msgOrObj){
+	let obj=prepareNotificationObj.apply(this,arguments)
+	console.log("TOAST:",obj);
+	let toast=document.getElementById('toast-template').content.cloneNode(true).children[0];
+	toast.id='toast-'+toast.tag
+	if(obj.title!=notificationDefaults.title)
+		toast.querySelector('.toast-title').innerText=obj.title;
+	toast.querySelector('.toast-body').innerText=obj.body;
+	// toast.setAttribute('onclick',"expireToast(this)");
+	document.getElementById("toasts").appendChild(toast);
+	setTimeout(()=>expireToast(toast),5000);
+}
+
+async function expireToast(toast,fast){
+	try{
+		toast.classList.add('fade-out'+(fast?'-fast':''));
+		await sleep(fast?200:1000);
+	}catch(e){}
+	try{
+		toast.remove()
+	}catch(e){}
+}
+
 
 
 function demoNotification(){
 	if(service && service.connected){
 		const elem=document.querySelector('#install>.notification .state');
 		var i=5
-		sendNotification('This notification was fired from the background service. It will fire even if '+
+		service.backgroundNotification('This notification was fired from the background service. It will fire even if '+
 			"your browser isn't open! Try it!",i*1000);
 		elem.innerText=i;
 		const interval=setInterval(()=>{
@@ -402,7 +453,7 @@ function demoNotification(){
 			}
 		},1000)
 	}else{
-		sendNotification('This notification was fired right away because you have not installed the'+
+		showNotification('This notification sent from the foreground because you have not installed the'+
 			' background service');
 	}
 }
@@ -427,39 +478,6 @@ function sleep(ms){
 	})
 }
 
-async function showAppContent(){
-	try{
-		let txt='Welcome to the Paragast <span class="txt-purple">App</span>';
-		let welcome=document.querySelector('#welcome');
-		let demoBtn=document.querySelector('main button.hidden');
-		let installBtn=document.querySelector('.btn-pink');
-		if(window.matchMedia('(display-mode: standalone)').matches) {
-		   //standalone
-			welcome.innerHTML=txt;
-			demoBtn.classList.remove('hidden');
-			installBtn.classList.replace('btn-pink','btn-purple');
-			installBtn.innerText="Uninstall app"
-			document.querySelector('main button').remove();
-		}else{
-			//in browser
-			//Change text
-			welcome.classList.add('fade-out');
-			await sleep(1000);
-			welcome.innerHTML=txt;
-			welcome.classList.replace('fade-out','fade-in');
-			await sleep(300);
-
-			//show demo button 
-			demoBtn.classList.replace('hidden','fade-in');
-			//change color of install button
-			installBtn.classList.replace('btn-pink','btn-purple');
-		}
-
-	}catch(e){
-		console.error(e);
-	}
-}
-
 
 
 
@@ -467,15 +485,19 @@ async function initApp(){
 	try{
 		if(!isServiceRunning()){
 			console.warn("Not running app because service is not running");
+		}else if(!inStandaloneMode()){
+			console.warn("Background service is running, but we're not in standalone context so not showing anything...");
 		}else{
+			console.warn("RUNNING APP")
+			document.body.replaceChild(document.getElementById('app').content,document.getElementById('website'));
+			
 			//connect to service
 			service=new Service();
 			await service.connect();
 			
 			//Announce we're running in background
-			service.backgroundNotification('Paragast is running in the background',1000);
+			showToast('Paragast is running in the background');
 			
-			showAppContent();
 
 			await service.send('setupDatabase');
 
@@ -486,12 +508,56 @@ async function initApp(){
 }
 
 
-function demoApp(){
-	showPopup('demo');
+
+
+
+
+
+
+
+
+
+
+
+
+/* APP */
+
+function getService(){
 	if(service && service.connected){
-		service.backgroundNotification("Demo in progress...",2000);
-		service.send('notificationInterval',{msg:"Paragast notification demo",interval:360000})
+		return service
 	}else{
-		console.error("Service not connected");
+		throw new Error("Service not connected!");
 	}
+}
+
+function toggleMenu(){
+	document.getElementById('menu').classList.toggle('hidden');
+	document.querySelector('nav .three-dots').classList.toggle('pressed');
+}
+
+
+function demoApp(){
+	// showPopup('demo');
+	let service=getService();
+	showNotification("Demo in progress...");
+	// service.send('notificationInterval',{msg:"Paragast notification demo",interval:360000})
+	populateTable();
+}
+
+
+function populateTable(){
+	let service=getService();
+	console.log("Fetching headlines from service...");
+
+
+}
+
+
+function addRow(data){
+	let tr=document.getElementById('row-template').content.cloneNode(true).children[0];
+	tr.id="headline-"+data.id;
+	for(let td of Array.from(tr.children)){
+		td.innerText=data[td.classList[0]];
+	}
+	document.querySelector('#headlines tbody').appendChild(tr);
 }

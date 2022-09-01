@@ -12,7 +12,9 @@
     <![endif]-->
 	<script type="text/javascript" src="app.js"></script>
 </head>
-	<body>
+<body>
+	<div id="website">
+		
 		<nav>
 			<div>
 				<img class="logo desktop" src="/logo-name.svg" alt="Paragast" onclick="hardReload()">
@@ -27,47 +29,45 @@
 			<h1 id="welcome">Where your <span class="txt-purple">community</span> <br> comes to life.</h1>
 			<div id="tagline">Paragast is the result of creators & fans working together.</div>
 			<button class="btn-purple">Access our beta today</button>
-			<button class="btn-pink" onclick="showPopup('install')">Install our app</button>
-			<button class="btn-pink hidden" onclick="demoApp()">Demo App</button>
+			<button class="btn-pink" onclick="showInstall()">Install our app</button>
 		</main>
-		<div id="overlay" class="hidden" onclick="hidePopup(this,event)">
-			<div id="popup-install" class="popup hidden">
-				<h2>Paragast Web App</h2>
+		<div id="overlay" class="hidden" onclick="hideInstall(this,event)">
+			<div class="popup">
+				<h2>Paragast App</h2>
 				<div>
-					<h3>What is a web app?</h3>
+					<h3>What is a <i>progressive web app (PWA)</i></h3>
 					<p>
-						A <i>progressive web app (PWA)</i> runs in your browser, but thanks to modern web technologies these work 
-						much like <i>native apps</i>: 
+						A PWA is a webpage which behaves like a <i>native app</i>. It runs in your browser but it also:
 					</p>
 					<ul>
-						<li>Live on your home screen</li>
-						<li>Store data offline</li>
-						<li>Run in the background</li>
-						<li>Notify you of new messages/content</li>
+						<li>Lives on your home screen</li>
+						<li>Stores data offline</li>
+						<li>Runs in the background</li>
+						<li>Notifies you of new messages/content</li>
 					</ul>
 					<h3>How to install:</h3>
 					<ol id='install'>
 						<li class="notification">
-							Allow Paragast to send <i>notifications</i> 
+							Allow Paragast to send <i>notifications</i> <span class="state"></span>
 							<div>
 								<button class="enable" onclick="enableNotifications()">Allow</button>
-								<span class="state"></span>
-								<button class="demo" onclick="demoNotification()">Test</button>
+								<button class="demo" onclick="showNotification('Hello World')">Test</button>
 							</div>
 						</li>
 						<li class="service">
-							Install the background service 
+							Install the background service <span class="state"></span>
 							<div>
 								<button class="enable" onclick="enableService()">Install</button>
-								<span class="state"></span>
 								<button class="disable" onclick="disableService()">Uninstall</button>
 							</div>
 						</li>
 						<li class="homescreen">
-							Add Paragast to your home screen
+							Add Paragast to your home screen. <span class="state"></span>
 							<div>
-								<button onclick="addToHomeScreen(this)" disabled>Add</button>
-								<span class="state"></span>
+								<div class="container">
+									<img src="/add-to-homescreen.png">
+									<a target="_blank" href="/add-to-homescreen.png">+</a>
+								</div>
 							</div>
 						</li>
 
@@ -80,16 +80,61 @@
 					</ol>
 				</div>
 			</div>
-			<div id="popup-demo" class="popup hidden">
-				<h1>Demo</h1>
-				<div>
-					Currently the demo is simple. It will show you 10 notifications over the next hour. 
-					It's already started so just close your browser and wait...
-				</div>
-			</div>
 		</div>
-	</body>
-	<script type="text/javascript">
-		initApp();
-	</script>
+	</div>
+
+	<div id="toasts"></div>
+	<template id="toast-template">
+		<div class="toast" onclick="expireToast(this,true)">
+			<div class="toast-head">
+				<span class="toast-title"></span>
+			</div>
+			<div class="toast-body"></div>
+		</div>
+	</template>
+
+	<template id="app">
+		<nav>
+			<img class="logo" src="/logo-name.svg" alt="Paragast">
+			<div onclick="toggleMenu()" class="three-dots">
+				<ul id="menu" class="top-right-main dropdown hidden">
+					<li>Sign in</li>
+					<li onclick="disableService()">Uninstall</li>
+				</ul>
+			</div>
+		</nav>
+		<main class="app">
+			<button class="btn-pink" onclick="demoApp()">Demo App</button>
+			<table id='headlines'>
+				<thead>
+					<tr>
+						<th>Title</th>
+						<th>Author</th>
+						<th>Published</th>
+						<th>Description</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+
+
+
+			</table>
+			<template id="row-template">
+				<tr>
+					<td class="title"></td>
+					<td class="author"></td>
+					<td class="publishedAt"></td>
+					<td class="description"></td>
+				</tr>
+			</template>
+
+
+		</main>
+	</template>
+</body>
+
+<script type="text/javascript">
+	initApp();
+</script>
 </html>

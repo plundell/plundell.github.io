@@ -38,6 +38,11 @@ body{
 	opacity: 0;
 	transition: visibility 0s 1s, opacity 1s linear;
 }
+.fade-out-fast{
+	visibility: hidden;
+	opacity: 0;
+	transition: visibility 0s 0.2s, opacity 0.2s linear;
+}
 .fade-in{
 /*	visibility: visible;
 	opacity: 1;
@@ -61,11 +66,17 @@ nav{
 nav > * {
 	display: flex;
 }
-nav .logo {
+nav .logo,nav .three-dots {
 	height: 2.5rem;
+	font-size: 2.5rem;
 	cursor: pointer;
 }
 
+.top-right-main{
+	position: absolute;
+	right: 8px; /*body has 8px margin*/
+	top: 7rem; /* padding of nav+margin of body+height of logo/3dots = 112px or 7rem */
+}
 
 
 
@@ -191,27 +202,68 @@ button:enabled:active{
 	font-weight: bold;
 }
 
-.working {
-  display: inline-block;
-  width: 80px;
-  height: 80px;
+.homescreen .container{
+	position: relative;
+	margin: 0.5rem 1rem;
 }
-.working:after {
-  content: " ";
-  display: block;
-  width: 64px;
-  height: 64px;
-  margin: 8px;
-  border-radius: 50%;
-  border: 6px solid #fff;
-  border-color: #fff transparent #fff transparent;
-  animation: working-spin 1.2s linear infinite;
+.homescreen .container img{
+	display: block;
+	max-height: 6em;
+	filter: brightness(50%);
 }
-@keyframes working-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+.homescreen .container a{
+	position: absolute;
+	width: 100%;
+	top: 0;
+    left: 5rem;
+	text-decoration: none;
+	font-size: 5rem;
+	color: #e4e4e4;
+
+}
+
+.pressed{
+	background: #e5e3e3d4;
+}
+.three-dots{
+  padding: 1rem;
+  margin: -1rem;
+}
+.three-dots:after {
+  content: '\2807';
+}
+.three-dots:hover{
+	cursor: pointer;
+}
+.dropdown {
+	border: 1px solid gray;
+	font-size: 1rem;
+	list-style-type:none;
+	padding: 5px 0;
+	margin: 0;
+	min-width: 10rem;
+}
+.dropdown li{
+	padding: 1rem;
+}
+.dropdown li:hover{
+	cursor: pointer;
+	background: #d7d7d7;
+}
+
+#toasts{
+	position: absolute;
+    right: 0;
+    bottom: 0;
+}
+.toast{
+	margin: 0.5rem;
+}
+.toast-head{
+	background: #d7d7d7;
+	padding: 0.5em;
+}
+.toast-body{
+	padding:1em;
+	background: #e5e3e3d4;
 }
