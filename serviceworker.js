@@ -39,6 +39,8 @@
 				}
 			]
 		}
+		,googleNewsQuery:"https://newsapi.org/v2/top-headlines?sources=techcrunch&apiKey="
+		,googleNewsApiKey:'40d9d72d5d1a4505bdbed7dc34fb6cd8'
 	}
 
 
@@ -142,6 +144,10 @@
 			}
 			return;
 		}
+
+		,getAllHeadlines:async ()=>fetchHeadlines()
+
+
 	}
 
 
@@ -405,6 +411,12 @@
 
 
 
+
+
+
+
+
+
 	/* IndexedDB */
 
 	//Creates or opens a IDBDatabase...
@@ -449,6 +461,64 @@
 
 
 
+
+	function getLast(type){
+		return new Date('2022-09-01T10:51:27Z');
+	}
+
+	function setLast(type,timestamp){
+
+	}
+
+/*
+{
+	"status": "ok",
+	"totalResults": 7401,
+	-"articles": [
+		-{
+		-"source": {
+			"id": null,
+			"name": "seattlepi.com"
+		},
+		"author": "By MATT OTT, AP Business Writer",
+		"title": "Fewer Americans file for jobless benefits last week",
+		"description": "WASHINGTON (AP) —\nFewer Americans filed for unemployment benefits last week as the labor market continues to shine despite weakening elements of the U.S. economy.\nApplications for jobless aid for the week ending Aug. 27 fell by 5,000 to 232,000, the Labor Dep…",
+		"url": "https://www.seattlepi.com/business/article/Fewer-Americans-file-for-jobless-benefits-last-17412312.php",
+		"urlToImage": "https://www.seattlepi.com/img/pages/article/opengraph_default.png",
+		"publishedAt": "2022-09-01T12:51:27Z",
+		"content": "Fewer Americans filed for unemployment benefits last week as the labor market continues to shine despite weakening elements of the U.S. economy.Applications for jobless aid for the week ending Aug. 2… [+2996 chars]"
+		},
+		-{
+
+*/
+
+
+	function storeHeadline(headline){
+		setLast('headline',headline.publishedAt);
+
+	}
+
+	async function fetchHeadlines(){
+		var response=fetch(globalScope.config.googleNewsQuery+globalScope.config.googleNewsApiKey)
+		var headlines=response.json().articles;
+		for(let headline of headlines){
+			delete headline.source;
+			headline.publishedAt=Math.floor(new Date(headline.publishedAt)); //unix timestamp
+		}
+		return headlines;
+	}
+
+	async function checkNewHeadlines(){
+		let last=getLast('headline');
+		let headlines=await getHeadlines();
+		for(let headline of headlines){
+			if(headline.publishedAt>last){
+				storeHeadline(headline);
+				public.showNotification(headline.title);
+			}
+		}
+
+	}
 
 
 
