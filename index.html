@@ -10,6 +10,7 @@
 	<!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <script type="text/javascript" src="lib.js"></script>
 	<script type="text/javascript" src="app.js"></script>
 </head>
 <body>
@@ -29,7 +30,11 @@
 			<h1 id="welcome">Where your <span class="txt-purple">community</span> <br> comes to life.</h1>
 			<div id="tagline">Paragast is the result of creators & fans working together.</div>
 			<button class="btn-purple">Access our beta today</button>
-			<button class="btn-pink" onclick="showInstall()">Install our app</button>
+			<div>
+				<button class="btn-pink" onclick="installApp()">Install our app</button>
+				<span class="info-btn" onclick="showInstall()"></span>
+			</div>
+
 		</main>
 		<div id="overlay" class="hidden" onclick="hideInstall(this,event)">
 			<div class="popup">
@@ -57,8 +62,8 @@
 						<li class="service">
 							Install the background service <span class="state"></span>
 							<div>
-								<button class="enable" onclick="enableService()">Install</button>
-								<button class="disable" onclick="disableService()">Uninstall</button>
+								<button class="enable" onclick="registerService()">Install</button>
+								<button class="disable" onclick="unregisterService()">Uninstall</button>
 							</div>
 						</li>
 						<li class="homescreen">
@@ -99,12 +104,13 @@
 			<div onclick="toggleMenu()" class="three-dots">
 				<ul id="menu" class="top-right-main dropdown hidden">
 					<li>Sign in</li>
-					<li onclick="disableService()">Uninstall</li>
+					<li onclick="uninstallApp()">Uninstall</li>
+					<li onclick="checkForUpdate()">Check for update</li>
 				</ul>
 			</div>
 		</nav>
 		<main class="app">
-			<button class="btn-pink" onclick="demoApp()">Demo App</button>
+			<!-- <button class="btn-pink" onclick="demoApp()">Demo App</button> -->
 			<table id='headlines'>
 				<thead>
 					<tr>
