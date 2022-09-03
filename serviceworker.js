@@ -525,7 +525,7 @@
 					//Since onupgradeneeded may not have fired because the db already existed we have to check to make
 					//sure that it contains the tables we want
 					globalScope.db=event.target.result;
-					if(checkDbStructure(globalScope.db)){ //will log and reject promise if we're not setup right
+					if(checkDbStructure(globalScope.db,conf.stores)){ //will log and reject promise if we're not setup right
 						promise.resolve('Database open and verified to have correct stores');
 					}else{
 						promise.reject("Database open, but it doesn't contain the correct stores")
@@ -545,15 +545,17 @@
 	}
 
 
-	function checkDbStructure(db){
+	function checkDbStructure(db,stores){
+		db=db||globalScope.db
+		stores=stores||globalScope.config.database.stores
 		let details={
 			created:Object.values(db.objectStoreNames)
-			,configured:globalScope.config.database.stores
+			,configured:stores
 		};
 		if(!details.created.length){
 			console.error("None of the IDBObjectStores were created",details);
 
-		}else if(details.created.length != details.configured.length){
+		}else if(details.created.length != stores.length){
 			console.error("Not ALL of the IDBObjectStores were created",details);
 
 		}else{
@@ -662,7 +664,70 @@
 	// }
 
 
+	function addPromise(obj,resolveProps,rejectProps,timeout){
+		var promise=globalScope.exposedPromise(timeout);
+		for(let prop of resolveProps){
+			obj[prop]=promise.resolve;
+		}
+		for(let prop of rejectProps){
+			obj[prop]=promise.reject;
+		}
+		Object.defineProperty(obj,'promise',{value:promise, configurable:true})
+		return promise;
 
+	}
+	/**
+	 * Start a transaction on the database, then open all requested ObjectStores and connect a promise
+	 * to the oncomplete and onerror callbacks
+	 * 
+	 * @param array|string stores    One or more stores which will be part of the transaction
+	 * @param string *mode           In what mode should the stores be accessed? Default 'readwrite'
+	 * 
+	 * @return <IDBTransaction>      ...with additional props .promise .stores, .operations and .exec
+	 */
+	function startTransaction(stores,readwrite){
+		stores=Array.isArray(stores) ? stores : [stores];
+		mode=readwrite ? 'readwrite' : 'readonly';
+		var transaction=globalScope.db.transaction(stores,mode);
+		addPromise(transaction,['oncomplete'],['onerror','onabort']);
+		transaction.stores={}
+		for(let s of stores){
+			transaction.stores[s]=transaction.objectStore(s);
+		}
+		transaction.operations=[];
+		transaction.exec=(store,method,...args)=>{
+			try{
+				if(stores.length==1 && stores.indexOf(store)==-1){
+					args.unshift(method);
+					method=store;
+					store=stores[0];
+				}
+				const s=transaction.stores[store];
+				const request=s[method].apply(s,args);
+				addPromise(request,['onsuccess'],['onerror']);
+				transaction.operations.push({store,method,args,request});
+				console.debug({transaction,store,method,args,request})
+				return request;
+			}catch(e){
+				console.error("Failed to exec method. ",e);
+			}
+		}
+		return transaction;
+	}
+
+
+
+	function addRecords(store,records){
+		var transaction=startTransaction(store,true); //true=>will write
+		for(let record of (Array.isArray(records) ? records : [records])){
+			transaction.exec('add',record)
+		}
+		transaction.commit();
+		return transaction.promise.catch(event=>{
+			console.error("Failed to add all records",{event,transaction});
+			return false;
+		})
+	}
 
 	function getLast(type){
 		return new Date('2022-09-01T10:51:27Z');
@@ -695,10 +760,7 @@
 */
 
 
-	function storeHeadline(headline){
-		setLast('headline',headline.publishedAt);
-
-	}
+	
 
 	async function fetchHeadlines(){
 		try{
@@ -717,6 +779,12 @@
 		}
 	}
 
+	function storeHeadlines(newHeadlines){
+		console.log("Storing new headlines...",newHeadlines);
+		// setLast('headline',headline.publishedAt); //TODO: add last and headlines in same transaction
+		return addRecords('headlines',newHeadlines);
+	}
+
 	/**
 	 * Check for new headlines
 	 * 
@@ -732,9 +800,10 @@
 		for(let headline of headlines){
 			if(headline.publishedAt>last){
 				newHeadlines.push(headline);
-				storeHeadline(headline);
 			}
 		}
+		await storeHeadlines(newHeadlines);
+
 		if(newHeadlines.length===1){
 			let headline=newHeadlines[0];
 			showNotification(headline.title,{body:headline.description});
