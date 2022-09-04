@@ -130,7 +130,7 @@ Service.prototype.clearData=async function(){
 		}
 		try{
 			console.log('deleting database...');
-			await this.send('deleteDatabase');
+			await this.send('destroyDatabase');
 		}catch(e){
 			logErrors(e);
 		}
@@ -171,6 +171,8 @@ Service.isRegistered=async function(){
 				,navigator.serviceWorker.getRegistration()
 			])
 			return registration && registration.active ? true : false
+			//TODO: this isn't really right, installation may take longer if we eg. fetch stuff in it, but the
+			//      registration will be done... but how are we using this function??
 		}
 	}catch(e){
 		logErrors(e);
@@ -200,14 +202,21 @@ Service.install=async function(){
 		}else{
 			console.log("registering service worker...");
 			registration=await navigator.serviceWorker.register('/serviceworker.js',{scope: '/'})
-			await sleep(500);
-			if(await Service.isRegistered()){
-				console.warn("Registered service worker"); 
-				//NOTE: installation will continue in background, see onInstall() in serviceworker.js
-			}else{
-				throw new Error("Failed to register serviceworker.js. Check console for possible issues with "
-					+"install event");
+			var i=20;
+			while(i--){
+				await sleep(500);
+				if(await Service.isRegistered()){
+					console.warn("Registered service worker"); 
+					break;
+					//NOTE: installation will continue in background, see onInstall() in serviceworker.js
+				}
+
 			}
+			if(i<1){
+				throw new Error("Service worker still not registered and active after 10 seconds. "
+					+"Install may have failed or not finished yet, check console");
+			}
+			
 		}
 	}
 }
@@ -576,6 +585,7 @@ function showLeastInstrusiveNotification(){
 	else
 		showToast.apply(this,arguments);
 }
+window.notify=showLeastInstrusiveNotification;
 
 
 
@@ -638,7 +648,7 @@ async function installApp(){
 	}catch(e){
 		logErrors(e);
 	}
-	
+
 	//Reload the page
 	location.reload(true);
 }
@@ -651,6 +661,7 @@ async function installApp(){
 function inStandaloneMode(){
 	return window.matchMedia('(display-mode: standalone)').matches;
 }
+
 
 /**
  * Called from seperate script tag at bottom of DOM. Checks if a service is running in which case
@@ -674,6 +685,10 @@ async function initApp(){
 			showToast('Paragast is running in the background');
 
 			service.setBroadcastHandler('notification',showLeastInstrusiveNotification);
+			service.setBroadcastHandler('headlines',populateTable);
+			service.setBroadcastHandler('checked_headlines',setLastCheck);
+
+			db.setup();
 
 			populateTable();
 
@@ -710,6 +725,8 @@ async function initApp(){
 
 /* APP */
 
+const db=new Database(paragast.database); //db.setup() called in initApp()
+Object.defineProperty(window,'db',{value:db});
 
 function toggleMenu(){
 	document.getElementById('menu').classList.toggle('hidden');
@@ -717,18 +734,27 @@ function toggleMenu(){
 }
 
 async function uninstallApp(){
-	showToast("Uninstalling app...");
+	try{
+		showToast("Uninstalling app...");
+		if(db && db.db){
+			db.close();	
+		}
 
-	//Uninstall possible existing service. This will also clear the services cache and IndexedDB
-	if(await Service.isRegistered()){
-		if(service.connected)
-			await service.clearData();
-		await Service.uninstall();
+		//Uninstall possible existing service. This will also clear the services cache and IndexedDB
+		if(await Service.isRegistered()){
+			if(service.connected)
+				await service.clearData();
+			await Service.uninstall();
+		}else{
+			db.destroy();
+		}
+
+		//Reload the page
+		location.reload(true);
+	}catch(e){
+		console.error(e);
+		showToast("Failed to uninstall app. See console for details.");
 	}
-
-
-	//Reload the page
-	location.reload(true);
 }
 async function checkForUpdate(){
 	if(await Service.checkUpdate()){
@@ -746,22 +772,36 @@ function demoApp(){
 	populateTable();
 }
 
+async function updateTable(){
+	try{
+		console.warn("Asking service to check for new headlines...");
+		await service.send('checkNewHeadlines',3);
+	}catch(cause){
+		logErrors(new Error("Failed to check for new headlines",{cause}));
+	}
+}
 
 async function populateTable(headlines){
 	try{
 		if(!headlines){
 			console.warn("Fetching headlines from service...");
-			headlines=await service.send('checkNewHeadlines');
+			headlines=await service.send('getAllHeadlines');
 		}
-		console.warn("Populating table with:",headlines);
-		for(let headline of headlines){
-			addHeadline(headline);
+		if(!Array.isArray(headlines)){
+			throw new Error("BUGBUG: populateTable expected an array of headlines at this point, got: "+String(headlines));
+		}else if(!headlines.length){
+			console.warn("populateTable() got an empty array");
+		}else{
+			console.warn("Populating table with:",headlines);
+			for(let headline of headlines.reverse()){
+				addHeadline(headline);
+			}
 		}
 	}catch(cause){
 		logErrors(new Error("Failed to populate table",{cause}));
 	}
-
 }
+
 
 
 function addHeadline(headline){
@@ -783,24 +823,24 @@ function addHeadline(headline){
 				elem.innerText=headline[key];
 		}
 	}
-	document.querySelector('#headlines tbody').appendChild(tr);
+	let body=document.querySelector('#headlines tbody')
+	body.insertBefore(tr, body.firstChild);
 }
 
 
 
 function getAge(timestamp){
-	timestamp=Number(timestamp);
-	if(isNaN(timestamp))
+	const date=formatDate('object',timestamp);
+	if(isNaN(date))
 		throw new TypeError("Not a valid timestamp: "+String(timestamp));
-	var now=new Date();
-	var date=new Date(timestamp);
-	var minutes=Math.round((Date.now()-timestamp)/1000/60);
+	const now=new Date();
+	const minutes=Math.round((Date.now()-timestamp)/1000/60);
 	if(now.toDateString()==date.toDateString()){
 		//Today
-		if(now.getHours()==date.getHours()){
+		if(minutes<60){
 			return minutes+' min ago'
 		}else{
-			return date.getHours()+':'+date.getMinutes();
+			return formatDate('time',date);
 		}
 	}else{
 		let yesterday = new Date(new Date().setDate(new Date().getDate()-1));
@@ -817,4 +857,8 @@ function updateAge(elem){
 
 function updateAllAges(){
 	Array.from(document.querySelectorAll('#headlines .publishedAt')).forEach(updateAge);
+}
+
+function setLastCheck(ts){
+	document.getElementById('lastHeadlineCheck').innerText='Last checked: '+(new Date(ts)).toLocaleString();
 }

@@ -291,6 +291,7 @@ button:enabled:active{
 
 #headlines{
 	width: 90%;
+	table-layout: fixed;
 }
 #headlines th{
 	text-align: left;
@@ -301,3 +302,13 @@ button:enabled:active{
 #headlines tbody tr:nth-child(even){
 	background: lightgray;
 } 
+
+td {
+	overflow: hidden;
+   	white-space: nowrap;
+   	text-overflow: ellipsis;
+}
+td:hover{
+	overflow: visible;
+	white-space: initial;
+}

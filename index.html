@@ -111,29 +111,53 @@
 		</nav>
 		<main class="app">
 			<!-- <button class="btn-pink" onclick="demoApp()">Demo App</button> -->
-			<table id='headlines'>
-				<thead>
+			<div>
+				<h1>
+					Periodic Sync
+				</h1>
+				<p>
+					This table shows news headlines from Google News. It works by periodically
+					asking the Google News API for articles newer than the last one it got, ie. it's
+					<b>not</b> dependent on any server-side code.
+				</p>
+				<p>
+					In Chrome and Samsung Browser this works in the <i>background</i> which means it will keep
+					checking even after the user closes the browser tab, however it's not yet supported in Firefox
+					or Safari, see more <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Periodic_Background_Synchronization_API#browser_compatibility">here</a>
+				</p>
+				<div>
+					<button onclick="updateTable()">Manually check</button>
+					<span id="lastHeadlineCheck"></span>
+				</div>
+
+
+				<table id='headlines'>
+					<colgroup>
+					    <col style="width: 50%;"/>
+					    <col style="width: 30%;"/>
+					    <col />
+					</colgroup>
+					<thead>
+						<tr>
+							<th>Title</th>
+							<th>Author</th>
+							<th>Published</th>
+							<!-- <th>Description</th> -->
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				<template id="row-template">
 					<tr>
-						<th>Title</th>
-						<th>Author</th>
-						<th>Published</th>
-						<th>Description</th>
+						<td class="title"></td>
+						<td class="author"></td>
+						<td class="publishedAt"></td>
+						<!-- <td class="description"></td> -->
 					</tr>
-				</thead>
-				<tbody>
-				</tbody>
+				</template>
+			</div>
 
-
-
-			</table>
-			<template id="row-template">
-				<tr>
-					<td class="title"></td>
-					<td class="author"></td>
-					<td class="publishedAt"></td>
-					<td class="description"></td>
-				</tr>
-			</template>
 
 
 		</main>
