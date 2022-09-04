@@ -32,9 +32,17 @@ console.debug("loading lib.js...");
 		}
 		// ,googleNewsQuery:"https://newsapi.org/v2/top-headlines?sources=techcrunch&apiKey="
 		,googleNewsQuery:"https://newsapi.org/v2/top-headlines?language=en&pageSize=10&apiKey="
-		,googleNewsApiKey:'40d9d72d5d1a4505bdbed7dc34fb6cd8'
+		,googleNewsApiKeys:[
+			'40d9d72d5d1a4505bdbed7dc34fb6cd8'
+			,'89609c10d38147cea486ab995487e98f'
+			,'faa33dba60d44389acd5e4cf2dd93f9c'
+			,'0ce6de3cbc7c4973b3676db69c522d5f'
+
+		]
+		,googleNewsApiKeyIndex:0
 
 		,updateCheckInterval:60*60*1000 //set to 0 to never check
+		,heartbeatInterval:1000*60*3 //every 3 minutes
 	};
 
 	Object.assign(global,{
@@ -57,6 +65,8 @@ console.debug("loading lib.js...");
 		,checkNewHeadlines
 		,prepareHeadlineNotification
 		,sortHeadlines
+		,logHistory
+		,setupHeartbeat
 	});
 
 
@@ -609,6 +619,7 @@ console.debug("loading lib.js...");
 		try{
 			timestamp=formatDate('string',timestamp);
 			await global.db.put('last',{timestamp,type});
+			logHistory('set_last',type+" to "+timestamp);
 			return timestamp
 		}catch(e){
 			logErrors("Failed to set last",arguments,e);
@@ -621,11 +632,18 @@ console.debug("loading lib.js...");
 	async function fetchHeadlines(extraQueryParams=""){
 		try{
 			typeCheck(extraQueryParams,'string',1);
-			var url=config.googleNewsQuery+config.googleNewsApiKey+extraQueryParams;
+			var key=config.googleNewsApiKeys[config.googleNewsApiKeyIndex++ % config.googleNewsApiKeys.length]
+			var url=config.googleNewsQuery+key+extraQueryParams;
 			console.debug("Fetching headlines:",
 				{url,base:config.googleNewsQuery,key:config.googleNewsApiKey,extraQueryParams,config});
 			var response=await fetch(url);
 			var payload=await response.json();
+			if(payload.status=='error'){
+				if(payload.code=='rateLimited')
+					return fetchHeadlines(extraQueryParams);
+				else
+					throw new Error(payload.code+': '+payload.message);
+			}
 			var headlines=payload.articles;
 			for(let headline of headlines){
 				if(!headline.author && headline.source)
@@ -638,6 +656,7 @@ console.debug("loading lib.js...");
 			}
 			return headlines.sort(sortHeadlines);
 		}catch(cause){
+
 			throw new Error("Failed to fetch headlines from "+url,{cause});
 		}
 	}
@@ -670,11 +689,12 @@ console.debug("loading lib.js...");
 	 * 
 	 * @param integer limit   For demo purposes, stop after having found this many
 	 * 
-	 * @return void           Nothing returned, but new headlines will be emitted, @see announceNewHeadlines
+	 * @return Integer        How many new headlines were found (subject to limit)
 	 * */
 	async function checkNewHeadlines(limit){
 		try{
-			if(!db)
+			logHistory('checking_headlines')
+			if(!global.db)
 				throw new Error("Cannot check for new headlines without anywhere to store them")
 			let last=await getLast('headlines','string','+1');
 			var query="";
@@ -706,6 +726,7 @@ console.debug("loading lib.js...");
 			}
 			//Regarless if we found anything, store and broadcast the last checked timestamp
 			setLast('checked_headlines',Date.now()).then(ts=>self.broadcast('checked_headlines',ts));
+			return newHeadlines.length;
 		}catch(e){
 			logErrors("Problem checking for new headlines",e);
 		}
@@ -736,5 +757,34 @@ console.debug("loading lib.js...");
 		}
 	}
 
+
+
+	function logHistory(type,details){
+		try{
+			let record={
+				timestamp:formatDate('string',new Date())
+				,type
+				,details
+			}
+			if(!global.db||!global.db.db){
+				console.warn('history:',record);
+			}else{
+				global.db.add('history',record).catch(console.error);
+			}
+		}catch(e){
+			console.error(e);
+		}
+	}
+
+	function setupHeartbeat(from){
+		if(!global.heartbeat){
+			logHistory("heartbeat_setup",from);
+			global.heartbeat=setInterval(()=>{
+				logHistory('heartbeat',from);
+			},config.heartbeatInterval)
+		}else{
+			logHistory('heartbeat_found',from);
+		}
+	}
 
 })(self);

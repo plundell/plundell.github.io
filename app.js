@@ -69,6 +69,7 @@ Service.prototype.connect=function(){
 	}
 }
 
+
 /**
  * Set at onmessage handler by Service.prototype.connect once connection to service has been established.
  * Should be bound to Service instance
@@ -148,6 +149,12 @@ Service.prototype.setBroadcastHandler=function(subject,handler){
 	}else{
 		delete this._private.handlers[subject];
 	}
+}
+
+
+Service.prototype.fakeIncomingBroadcast=function(subject,payload){
+	console.log("FAKE BROADCAST:",{subject,payload});
+	this._private.channel.port1.onmessage({data:{subject,payload}})
 }
 
 
@@ -585,7 +592,7 @@ function showLeastInstrusiveNotification(){
 	else
 		showToast.apply(this,arguments);
 }
-window.notify=showLeastInstrusiveNotification;
+
 
 
 
@@ -688,9 +695,20 @@ async function initApp(){
 			service.setBroadcastHandler('headlines',populateTable);
 			service.setBroadcastHandler('checked_headlines',setLastCheck);
 
-			db.setup();
+			await db.setup()
 
-			populateTable();
+			setLastCheck(await getLast('checked_headlines'));
+
+			// populateTable();//this asks the service
+			populateTable(await db.getAll('headlines')); //this checks the db directly
+
+			//For demo purpose check for new headlines
+			setTimeout(updateTable,3000);
+			var c=setInterval(async ()=>{
+				if(!updateTable()){
+					clearTimeout(c);
+				}
+			},15000);
 
 		}
 	}catch(e){
@@ -727,6 +745,15 @@ async function initApp(){
 
 const db=new Database(paragast.database); //db.setup() called in initApp()
 Object.defineProperty(window,'db',{value:db});
+
+
+function broadcast(subject,payload){
+	db.fakeIncomingBroadcast(subject,payload);
+}
+Object.defineProperty(window,'broadcast',{value:broadcast});
+
+Object.defineProperty(window,'notify',{value:showLeastInstrusiveNotification});
+
 
 function toggleMenu(){
 	document.getElementById('menu').classList.toggle('hidden');
@@ -775,7 +802,7 @@ function demoApp(){
 async function updateTable(){
 	try{
 		console.warn("Asking service to check for new headlines...");
-		await service.send('checkNewHeadlines',3);
+		return await service.send('checkNewHeadlines',3);
 	}catch(cause){
 		logErrors(new Error("Failed to check for new headlines",{cause}));
 	}
@@ -792,6 +819,7 @@ async function populateTable(headlines){
 		}else if(!headlines.length){
 			console.warn("populateTable() got an empty array");
 		}else{
+			headlines=headlines.sort(sortHeadlines);
 			console.warn("Populating table with:",headlines);
 			for(let headline of headlines.reverse()){
 				addHeadline(headline);
@@ -860,5 +888,7 @@ function updateAllAges(){
 }
 
 function setLastCheck(ts){
-	document.getElementById('lastHeadlineCheck').innerText='Last checked: '+(new Date(ts)).toLocaleString();
+	let date=new Date(ts);
+	if(date.getUTCFullYear()>2021)
+		document.getElementById('lastHeadlineCheck').innerText='Last checked: '+(new Date(ts)).toLocaleString();
 }
