@@ -510,7 +510,7 @@
 	  	});
 		console.warn("PUSH:",event,note);
 //let onesignal do this instead
-		// self.registration.showNotification(note.title,note);
+		self.registration.showNotification(note.title,note);
 	})
 
 
