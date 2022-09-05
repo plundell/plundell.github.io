@@ -93,6 +93,7 @@
 		,checkNewHeadlines:(limit)=>self.checkNewHeadlines(limit)
 		,getAllHeadlines:()=>self.db.getAll('headlines').then(arr=>arr.sort(self.sortHeadlines))
 		,destroyDatabase:()=>self.db.destroy()
+		,removeBackgroundSync
 	}
 	self.addEventListener('message',event=>{
 		if(event.data=='REGISTER'){
@@ -457,14 +458,26 @@
 			logErrors("Failed to register periodic background sync",e);
 		}
 	}
-	self.addEventListener('periodicsync', (event)=>{
+	function onPeriodicSync(event){
 		logHistory("periodic_run",event.tag);
 		if(event.tag === self.paragast.periodicSync.name){
 			event.waitUntil(self.checkNewHeadlines(1));
 		}else{
 			console.warn("UNKNOWN PERIODIC SYNC EVENT:",event);
 		}
-	});
+	}
+	self.addEventListener('periodicsync',onPeriodicSync);
+
+	function removeBackgroundSync(){
+		self.registration.periodicSync.getTags().then(tags=>{
+			if(tags.includes(conf.name)){
+				console.warn("Removing periodic background sync");
+				return self.registration.periodicSync.unregister(self.paragast.periodicSync.name);
+			}else{
+				console.log("No periodic sync registered, nothing to remove")
+			}
+		})
+	}
 
 
 })(self)

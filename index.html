@@ -113,7 +113,7 @@
 			<!-- <button class="btn-pink" onclick="demoApp()">Demo App</button> -->
 			<div>
 				<h1>
-					Periodic Sync
+					Periodic Sync API
 				</h1>
 				<p>
 					This table shows news headlines from Google News. It works by periodically
@@ -123,14 +123,15 @@
 				<p>
 					In Chrome and Samsung Browser this works in the <i>background</i> which means it will keep
 					checking even after the user closes the browser tab, however it's not yet supported in Firefox
-					or Safari, see more <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Periodic_Background_Synchronization_API#browser_compatibility">here</a>
+					or Safari, see more <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Periodic_Background_Synchronization_API#browser_compatibility">here</a>.
+				</p>
+				<p>
+					The frequency of checking is however limited to 12 or 24 hours (don't have exact details)
 				</p>
 				<div>
 					<button onclick="updateTable()">Manually check</button>
 					<span id="lastHeadlineCheck"></span>
 				</div>
-
-
 				<table id='headlines'>
 					<colgroup>
 					    <col style="width: 50%;"/>
@@ -158,6 +159,18 @@
 				</template>
 			</div>
 
+			<div>
+				<h1>Push API</h1>
+				<p>
+					This refers to a push service contacting the device, not the device displaying a notification to the user
+					(however sunch a notification is what is triggered as a result, but the two are completely seperate)
+				</p>
+				<p>
+					Again, Safari is not supported, but Firefox joins Chrome and Samsung, see 
+					<a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Push_API#browser_compatibility">here</a>.
+				</p>
+
+			</div>
 
 
 		</main>

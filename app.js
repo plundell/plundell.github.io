@@ -135,6 +135,12 @@ Service.prototype.clearData=async function(){
 		}catch(e){
 			logErrors(e);
 		}
+		try{
+			console.log('canceling background sync...');
+			await this.send('removeBackgroundSync');
+		}catch(e){
+			logErrors(e);
+		}
 	}else{
 		console.log("not connected to serviceworker, cannot clear background data");
 	}
@@ -705,7 +711,8 @@ async function initApp(){
 			//For demo purpose check for new headlines
 			setTimeout(updateTable,3000);
 			var c=setInterval(async ()=>{
-				if(!updateTable()){
+					
+				if(!await updateTable()){
 					clearTimeout(c);
 				}
 			},15000);
