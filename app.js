@@ -658,13 +658,7 @@ async function installApp(){
 		//Install new service
 		await Service.install();
 
-		//setup onesignal
-		 window.OneSignal = window.OneSignal || [];
-		  OneSignal.push(function() {
-		    OneSignal.init({
-		      appId: "d5abed7b-6cb5-4b40-99d5-2c503ec49996",
-		    });
-		  });
+
 
 	}catch(e){
 		logErrors(e);
@@ -674,6 +668,15 @@ async function installApp(){
 	location.reload(true);
 }
 
+
+function startOneSignal(){
+	window.OneSignal = window.OneSignal || [];
+	OneSignal.push(function() {
+		OneSignal.init({
+		appId: "d5abed7b-6cb5-4b40-99d5-2c503ec49996",
+		});
+	});
+}
 /**
  * Check if we're running in a window which looks like an app, not a browser window
  * 
@@ -724,6 +727,8 @@ async function initApp(){
 					clearTimeout(c);
 				}
 			},15000);
+
+			startOneSignal();
 
 		}
 	}catch(e){
