@@ -416,7 +416,7 @@
 						let newest=self.formatDate('string',Date.now()-(1000*60*60*3));
 						console.log(`Downloading headlines older than ${newest} to prime database`);
 						let oldHeadlines=await self.fetchHeadlines("&to="+newest+"&page=2");
-						oldHeadlines=oldHeadlines.slice(0,10);
+						oldHeadlines=oldHeadlines.slice(90,10);
 						await self.storeHeadlines(oldHeadlines);
 					}
 					return true;
@@ -503,15 +503,15 @@
 		}
 	}
 
+	self.addEventListener('push', (event) => {
+	  	let note=self.prepareNotificationObj({
+	  		'title':'Paragast'
+	  		,'body':'The server just contacted us... better check the app!'
+	  	});
+		console.warn("PUSH:",event,note);
 //let onesignal do this instead
-	// self.addEventListener('push', (event) => {
-	//   	let note=self.prepareNotificationObj({
-	//   		'title':'Paragast'
-	//   		,'body':'The server just contacted us... better check the app!'
-	//   	});
-	// 	console.warn("PUSH:",event,note);
-	// 	self.registration.showNotification(note.title,note);
-	// })
+		// self.registration.showNotification(note.title,note);
+	})
 
 
 
