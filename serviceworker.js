@@ -1,6 +1,7 @@
 (function(self){
 	
 	importScripts('/lib.js');
+	importScripts('https://cdn.onesignal.com/sdks/OneSignalSDKWorker.js');
 
 	const ts=(new Date()).getTime();
 	function getDurration(){
