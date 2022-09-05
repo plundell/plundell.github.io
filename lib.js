@@ -48,6 +48,11 @@ console.debug("loading lib.js...");
 			,interval:1000*60*3 //every 3 minutes
 		}
 		,heartbeatInterval:1000*60*3 //every 3 minutes
+
+		,pushService:{
+        	userVisibleOnly: true,
+        	// applicationServerKey: urlBase64ToUint8Array('XXXX')
+		}
 	};
 
 	Object.assign(global,{
@@ -137,7 +142,11 @@ console.debug("loading lib.js...");
 		}else if(a && typeof a=='object'){
 			Object.assign(n,a);
 		}
-		n.body=n.body||n.msg||n.description||'Check Paragast app'
+		n.body=n.body||n.msg||n.description||n.content
+		if(!n.body && n.title){
+			n.body=n.title
+			n.title='Paragast'
+		}
 		return n;
 	}
 

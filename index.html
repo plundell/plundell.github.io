@@ -113,6 +113,16 @@
 			<!-- <button class="btn-pink" onclick="demoApp()">Demo App</button> -->
 			<div>
 				<h1>
+					Offline storage
+				</h1>
+				<p>
+					All site date is able to be cached/stored offline. This makes it possible to download content
+					while you have a connection and then use the app when you don't, eg. on a flight etc. Offline
+					storage is only limited by device storage and can even contain large video files.
+				</p>
+			</div>
+			<div>
+				<h1>
 					Periodic Sync API
 				</h1>
 				<p>
@@ -126,7 +136,8 @@
 					or Safari, see more <a target="_blank" href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Periodic_Background_Synchronization_API#browser_compatibility">here</a>.
 				</p>
 				<p>
-					The frequency of checking is however limited to 12 or 24 hours (don't have exact details)
+					Another limitation is the frequency of checking which <a target="_blank" href="https://felixgerschau.com/periodic-background-sync-explained/#site-engagement-score">at most</a> 
+					is every 12 hours, but is more likely to be every 24 hours.
 				</p>
 				<div>
 					<button onclick="updateTable()">Manually check</button>

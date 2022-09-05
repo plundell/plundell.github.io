@@ -377,17 +377,6 @@
 
 
 
-	async function subscribeToMessages(){
-		try {
-			console.log("SUBSCRIBE"+getDurration());
-			let options = {}
-			let subscription = await self.registration.pushManager.subscribe(options)
-			console.log("Subscribed:"+getDurration(),subscription);
-		} catch (e) {
-			self.logErrors(e);
-		}
-
-	}
 
 
 	
@@ -435,6 +424,16 @@
 	}
 
 
+
+
+
+
+
+
+
+
+
+
 	/**
 	 * Setup a periodic running of something in the background
 	 * 
@@ -468,16 +467,50 @@
 	}
 	self.addEventListener('periodicsync',onPeriodicSync);
 
-	function removeBackgroundSync(){
-		self.registration.periodicSync.getTags().then(tags=>{
-			if(tags.includes(conf.name)){
+	async function removeBackgroundSync(){
+		try{
+			let tags=await self.registration.periodicSync.getTags();			
+			if(tags.includes(self.paragast.periodicSync.name)){
 				console.warn("Removing periodic background sync");
-				return self.registration.periodicSync.unregister(self.paragast.periodicSync.name);
+				await self.registration.periodicSync.unregister(self.paragast.periodicSync.name);
 			}else{
 				console.log("No periodic sync registered, nothing to remove")
 			}
-		})
+		}catch(e){
+			self.logErrors(e);
+		}
 	}
+
+
+
+	async function subscribeToMessages(){
+
+	}
+
+
+
+	async function registerToPushSerice(){
+		try {
+			console.log("Subscribing to push service");
+	      	let subscription = self.registration.pushManager.subscribe(self.paragast.pushService)
+			console.log("Subscribed:",subscription);
+		} catch (e) {
+			self.logErrors(e);
+		}
+	}
+
+	self.addEventListener('push', (event) => {
+	  	let note=self.prepareNotificationObj({
+	  		'title':'Paragast'
+	  		,'body':'The server just contacted us... better check the app!'
+	  	});
+		console.warn("PUSH:",event,note);
+		self.registration.showNotification(note.title,note);
+	})
+
+
+
+
 
 
 })(self)
