@@ -122,35 +122,51 @@ console.debug("loading lib.js...");
 		})
 	}
 
-	function prepareNotificationObj(a,b){
-		var n={
+	function prepareNotificationObj(){
+		var note={
 			icon:"/icons/icon-square-144.png"
 			,badge:"/icons/icon-square-96.png" //do we want this? onesignal is not using but did they have android notification icon?
 			,tag:Math.round(Math.random()*100000)
 			,timestamp:Date.now()
 			,requireInteraction: true //means you have to click it
 			,renotify: true //seems like this triggers sound and vibration on mobile... even though there's a 'vibrate' param
+			,title:'Paragast'
+			,body:""
 		};
+		var x,forceTitle;
+		if(arguments.length==2){
+			if(typeof arguments[0]=='string')
+				forceTitle=arguments[0];
+			x=arguments[1];
+		}else{
+			x=arguments[0];
+		}
 
-		if(typeof a=='string'){
-			if(typeof b=='string'){
-				n.title=a;
-				n.body=b;
-			}else{
-				n.body=a
-				if(b && typeof b=='object'){
-					Object.assign(n,b);		
+		if(typeof x=='string'){
+			note.body=x;
+		}else if(x instanceof Event){
+			if(x.data){
+				if(typeof x.data.text=='function'){
+					let txt=x.data.text();
+					try{Object.assign(note,JSON.parse(txt))}
+					catch(e){note.body=txt}
+				}else{
+					note.body=x.data
 				}
+			}else{
+				note.body="Got "+x.type+" event";
 			}
-		}else if(a && typeof a=='object'){
-			Object.assign(n,a);
+		}else if(x && typeof x=='object') {
+			Object.assign(note,x);
 		}
-		n.body=n.body||n.msg||n.description||n.content
-		if(!n.body && n.title){
-			n.body=n.title
-			n.title='Paragast'
-		}
-		return n;
+		note.body=note.body||note.description||note.content||note.data
+		if(note.body && typeof note.body=='object' && note.body.body)
+			note.body=note.body.body
+
+		if(forceTitle)
+			note.title=forceTitle;
+
+		return note;
 	}
 /*
 actions: undefined

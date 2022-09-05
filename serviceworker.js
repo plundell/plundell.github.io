@@ -512,10 +512,7 @@
 	}
 
 	self.addEventListener('push', (event) => {
-	  	let note=self.prepareNotificationObj({
-	  		'title':'Paragast'
-	  		,'body':'The server just contacted us... better check the app!'
-	  	});
+	  	let note=self.prepareNotificationObj(event)
 		console.warn("PUSH:",event,note);
 //let onesignal do this instead
 		self.registration.showNotification(note.title,note);
