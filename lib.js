@@ -124,10 +124,12 @@ console.debug("loading lib.js...");
 
 	function prepareNotificationObj(a,b){
 		var n={
-			badge:"/logo.svg"
-			,icon:"/logo.svg"
+			icon:"/icons/icon-square-144.png"
+			,badge:"/icons/icon-square-96.png" //do we want this? onesignal is not using but did they have android notification icon?
 			,tag:Math.round(Math.random()*100000)
 			,timestamp:Date.now()
+			,requireInteraction: true //means you have to click it
+			,renotify: true //seems like this triggers sound and vibration on mobile... even though there's a 'vibrate' param
 		};
 
 		if(typeof a=='string'){
@@ -150,6 +152,24 @@ console.debug("loading lib.js...");
 		}
 		return n;
 	}
+/*
+actions: undefined
+badge: undefined
+body: "asdfasdf"
+data:{
+	content: "asdfasdf"
+	data: {}
+	heading: "asdfasdf"
+	icon: "https://img.onesignal.com/permanent/c2112136-ba7f-4254-88a1-ff54b7264606"
+	id: "d4f77105-3029-4b2a-bdab-b7b7852ffeac"
+}
+icon: "https://img.onesignal.com/permanent/c2112136-ba7f-4254-88a1-ff54b7264606"
+image: undefined
+renotify: true
+requireInteraction: true
+tag: "d5abed7b-6cb5-4b40-99d5-2c503ec49996"
+vibrate: undefined
+*/
 
 	function exposedPromise(timeout){
 		var resolve,reject;
@@ -790,9 +810,10 @@ console.debug("loading lib.js...");
 				,type
 				,details
 			}
-			console.warn('history:',record);
 			if(global.db&&global.db.db){
 				global.db.add('history',record).catch(console.error);
+			}else{
+				console.warn('history:',record);
 			}
 		}catch(e){
 			console.error(e);

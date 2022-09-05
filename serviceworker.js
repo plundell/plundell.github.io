@@ -386,20 +386,28 @@
 	function showWindow(event){
 	  	console.log('Background notification clicked!',event);
 	  	setTimeout(()=>event.notification.close(),2000);
-
 	  	// This looks to see if the current is already open and focuses if it is
 		event.waitUntil(
-		  	clients.matchAll({
-			    type: "window"
-			})
-		  	.then((clientList) => {
-		  		console.warn(clientList,clients);
-			    for (const client of clientList) {
-			    	if (client.url === '/' && 'focus' in client)
-			        	return client.focus();
+		  	self.clients.matchAll({type: "window"}).then((clientList)=>{
+			  	//if any client is already focused on, don't change that
+			    for(let client of clientList) {
+			    	if(client.focused)
+			    		return;
 			    }
-			    if (clients.openWindow)
-			    	return clients.openWindow('/');
+			    //Then see if there's any client we can focus on
+		  		clientList=clientList.filter(client=>'focus' in client);
+		  		if(clientList.length){
+			  		//prefer a visible client...
+					for(let client of clientList) {
+				    	if(client.visibilityState=='visible')
+				    		return client.focus();
+				    }
+				    //else focus on the first one
+				    clientList[0].focus();
+		  		}else{
+		  			//if no client is open or focusable, open one
+			    	return self.clients.openWindow('/');
+		  		}
 			})
 		);
 	}

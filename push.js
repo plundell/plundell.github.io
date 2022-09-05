@@ -4948,9 +4948,14 @@
                 return self.workerMessenger || (self.workerMessenger = new a.a(null)), self.workerMessenger
             }
             static run() {
-                self.addEventListener("activate", k.onServiceWorkerActivated), self.addEventListener("push", k.onPushReceived), self.addEventListener("notificationclose", k.onNotificationClosed), self.addEventListener("notificationclick", e => e.waitUntil(k.onNotificationClicked(e))), self.addEventListener("pushsubscriptionchange", e => {
+                self.addEventListener("activate", k.onServiceWorkerActivated)
+                self.addEventListener("push", k.onPushReceived)
+                self.addEventListener("notificationclose", k.onNotificationClosed)
+                self.addEventListener("notificationclick", e => e.waitUntil(k.onNotificationClicked(e)))
+                self.addEventListener("pushsubscriptionchange", e => {
                     e.waitUntil(k.onPushSubscriptionChange(e))
-                }), self.addEventListener("message", e => {
+                }) 
+                self.addEventListener("message", e => {
                     const t = e.data;
                     if (!t || !t.command) return;
                     const i = t.payload;
@@ -4964,7 +4969,10 @@
                         default:
                             return
                     }
-                }), b.a.debug("Setting up message listeners."), k.workerMessenger.listen(), k.setupMessageListeners()
+                })
+                b.a.debug("Setting up message listeners.")
+                k.workerMessenger.listen()
+                k.setupMessageListeners()
             }
             static getAppId() {
                 return Object(n.a)(this, void 0, void 0, function*() {
