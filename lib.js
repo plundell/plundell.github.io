@@ -41,6 +41,7 @@ console.debug("loading lib.js...");
 
 			]
 			,index:0
+			,useLocal:'articles.json'
 		}
 
 		,periodicSync:{
@@ -649,13 +650,17 @@ console.debug("loading lib.js...");
 
 	async function fetchHeadlines(extraQueryParams=""){
 		try{
-			typeCheck(extraQueryParams,'string',1);
-			var google=config.googleNews;
-			var key=google.apiKeys[google.index++ % google.apiKeys.length]
-			var url=google.query+key+extraQueryParams;
-			console.debug("Fetching headlines:",
-				{url,google,extraQueryParams});
-			var response=await fetch(url);
+			if(config.googleNews.useLocal){
+				console.debug("Fetching local headlines");
+				var response=await fetch(config.googleNews.useLocal);
+			}else{
+				typeCheck(extraQueryParams,'string',1);
+				var google=config.googleNews;
+				var key=google.apiKeys[google.index++ % google.apiKeys.length]
+				var url=google.query+key+extraQueryParams;
+				console.debug("Fetching headlines:",{url,google,extraQueryParams});
+				var response=await fetch(url);
+			}
 			var payload=await response.json();
 			if(payload.status=='error'){
 				if(payload.code=='rateLimited')

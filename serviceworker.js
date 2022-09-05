@@ -416,6 +416,7 @@
 						let newest=self.formatDate('string',Date.now()-(1000*60*60*3));
 						console.log(`Downloading headlines older than ${newest} to prime database`);
 						let oldHeadlines=await self.fetchHeadlines("&to="+newest+"&page=2");
+						oldHeadlines=oldHeadlines.slice(0,10);
 						await self.storeHeadlines(oldHeadlines);
 					}
 					return true;
