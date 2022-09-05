@@ -8,14 +8,28 @@
 		return "	t = "+durr;
 	}
 
-	if(self.started){
-		console.warn("serviceworker.js ALREADY RUN at "+self.started,self)
+	self.isRunning=false;
+	async function onRunning(){
+		try{
+			if(!self.isRunning){
+				self.isRunning=true;
+				await setupDatabase();
+				await setupHeartbeat();
+				await setupBackgroundSync();
+				return true;
+			}
+		}catch(e){
+			self.logErrors(e);
+		}
+		return false;
+	}
+
+	if(self.loaded){
+		console.warn("serviceworker.js script already loaded at "+self.started,self)
 	}else{
 		self.started=(new Date()).toUTCString();
-		console.warn("running serviceworker.js for first time at "+self.started,self);
-		if(self.registration.active){
-			setupDatabase();
-		}
+		console.warn("loading serviceworker.js script at "+self.started,self);
+		
 	}
 
 
@@ -163,7 +177,7 @@
 				console.info("No IndexedDB defined in config, not setting one up.")
 			}
 
-			
+					
 
 			await Promise.all(paralell);
 			
@@ -204,19 +218,11 @@
 				console.warn("waiting for service worker to boot before performing fetching resources")
 			}
 
-			if(self.paragast.database){
-				if(!self.db){
-					console.warn("No db set on global scope, fixing...")
-					self.db=await (new self.Database(self.paragast.database)).setup();
-				}else if(!self.db.db){
-					console.warn("db on global scope not setup, fixing...")
-					await self.db.setup();
-				}else{
-					console.debug("Checking structure of db...")
-					if(!self.db.checkStructure()){
-						throw new Error("Cannot start without database in working order!");
-					}
-				}
+
+			if(self.paragast.periodicSync){
+				await setupBackgroundSync();
+			}else{
+				console.info("No periodic background sync defined in config, not setting any up.")
 			}
 
 			logHistory('activated')
@@ -244,6 +250,7 @@
 
 			console.debug('FETCHING '+event.request.url+getDurration());
 			checkSelfUpdate();
+			onRunning(); //runs async, never throws
 			
 			//First we check the cache
 			src="cache";
@@ -299,7 +306,6 @@
 		console.debug(`FINISHED: **${src}** fetch ${event.request.url}`+getDurration(),response);
 		return response;
 	};
-
 
 
 
@@ -426,6 +432,39 @@
 			return Promise.resolve(false);
 		}
 	}
+
+
+	/**
+	 * Setup a periodic running of something in the background
+	 * 
+	 * NOTE: this requires an active service worker, so do in activate event
+	 * */
+	async function setupBackgroundSync(){
+		try{
+			const conf=self.paragast.periodicSync;
+			const tags = await self.registration.periodicSync.getTags();
+			if(tags.includes(conf.name)){
+				console.warn(`Background sync for '${conf.name}' already registered`);
+			}else{
+				await self.registration.periodicSync.register(conf.name, {
+					minInterval: conf.interval
+				});
+				console.warn('setup periodic background sync');
+				logHistory("periodic_setup",conf);
+				//this will merely fire an event, we have to listen for the event
+			}
+		}catch(e){
+			logErrors("Failed to register periodic background sync",e);
+		}
+	}
+	self.addEventListener('periodicsync', (event)=>{
+		logHistory("periodic_run",event.tag);
+		if(event.tag === self.paragast.periodicSync.name){
+			event.waitUntil(self.checkNewHeadlines(1));
+		}else{
+			console.warn("UNKNOWN PERIODIC SYNC EVENT:",event);
+		}
+	});
 
 
 })(self)

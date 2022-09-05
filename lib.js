@@ -31,17 +31,22 @@ console.debug("loading lib.js...");
 			]
 		}
 		// ,googleNewsQuery:"https://newsapi.org/v2/top-headlines?sources=techcrunch&apiKey="
-		,googleNewsQuery:"https://newsapi.org/v2/top-headlines?language=en&pageSize=10&apiKey="
-		,googleNewsApiKeys:[
-			'40d9d72d5d1a4505bdbed7dc34fb6cd8'
-			,'89609c10d38147cea486ab995487e98f'
-			,'faa33dba60d44389acd5e4cf2dd93f9c'
-			,'0ce6de3cbc7c4973b3676db69c522d5f'
+		,googleNews:{
+			query:"https://newsapi.org/v2/top-headlines?language=en&pageSize=10&apiKey="
+			,apiKeys:[
+				'40d9d72d5d1a4505bdbed7dc34fb6cd8'
+				,'89609c10d38147cea486ab995487e98f'
+				,'faa33dba60d44389acd5e4cf2dd93f9c'
+				,'0ce6de3cbc7c4973b3676db69c522d5f'
 
-		]
-		,googleNewsApiKeyIndex:0
+			]
+			,index:0
+		}
 
-		,updateCheckInterval:60*60*1000 //set to 0 to never check
+		,periodicSync:{
+			name:'get-headlines'
+			,interval:1000*60*3 //every 3 minutes
+		}
 		,heartbeatInterval:1000*60*3 //every 3 minutes
 	};
 
@@ -430,6 +435,8 @@ console.debug("loading lib.js...");
 	Database.prototype.begin=function(stores,readwrite){
 		stores=Array.isArray(stores) ? stores : [stores];
 		const mode=readwrite ? 'readwrite' : 'readonly';
+		if(!this.db)
+			throw new Error("Database not setup");
 		const transaction=this.db.transaction(stores,mode);
 		promify(transaction,['oncomplete'],['onerror','onabort']);
 		Object.defineProperty(transaction,'stores',{value:{}});
@@ -602,7 +609,7 @@ console.debug("loading lib.js...");
 
 		if(!obj){
 			if(!global.db.hasStore(type)){
-				console.warn(`No last '${type} saved. Are you sure you spelled that correctly?`);
+				console.warn(`No last '${type}' entry saved. Are you sure you spelled that correctly?`);
 			}
 			return null;
 		}
@@ -632,10 +639,11 @@ console.debug("loading lib.js...");
 	async function fetchHeadlines(extraQueryParams=""){
 		try{
 			typeCheck(extraQueryParams,'string',1);
-			var key=config.googleNewsApiKeys[config.googleNewsApiKeyIndex++ % config.googleNewsApiKeys.length]
-			var url=config.googleNewsQuery+key+extraQueryParams;
+			var google=config.googleNews;
+			var key=google.apiKeys[google.index++ % google.apiKeys.length]
+			var url=google.query+key+extraQueryParams;
 			console.debug("Fetching headlines:",
-				{url,base:config.googleNewsQuery,key:config.googleNewsApiKey,extraQueryParams,config});
+				{url,google,extraQueryParams});
 			var response=await fetch(url);
 			var payload=await response.json();
 			if(payload.status=='error'){
@@ -766,9 +774,8 @@ console.debug("loading lib.js...");
 				,type
 				,details
 			}
-			if(!global.db||!global.db.db){
-				console.warn('history:',record);
-			}else{
+			console.warn('history:',record);
+			if(global.db&&global.db.db){
 				global.db.add('history',record).catch(console.error);
 			}
 		}catch(e){
@@ -777,9 +784,11 @@ console.debug("loading lib.js...");
 	}
 
 	function setupHeartbeat(from){
-		if(!global.heartbeat){
+		if(!global.heartbeat || (Date.now()-global.heartbeat)>config.heartbeatInterval){
+			global.heartbeat=Date.now(); //to avoid dubbel setup
 			logHistory("heartbeat_setup",from);
-			global.heartbeat=setInterval(()=>{
+			setInterval(()=>{
+				global.heartbeat=Date.now();
 				logHistory('heartbeat',from);
 			},config.heartbeatInterval)
 		}else{
