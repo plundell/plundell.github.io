@@ -71,6 +71,7 @@
     });
     class n {
         static shouldLog() {
+        	return true; //palun
             try {
                 if ("undefined" == typeof window || void 0 === window.localStorage) return !1;
                 const e = window.localStorage.getItem("loglevel");
@@ -2823,6 +2824,7 @@
             })
         }
         shouldInstallWorker() {
+        	return false; //palun
             return Object(c.a)(this, void 0, void 0, function*() {
                 if (!m.a.supportsServiceWorkers()) return !1;
                 if (!OneSignal.config) return !1;
@@ -5032,7 +5034,8 @@
                     const t = e.timestamp;
                     self.clientsStatus.timestamp === t && (self.clientsStatus.receivedResponsesCount++, e.focused && (self.clientsStatus.hasAnyActiveSessions = !0))
                 })), k.workerMessenger.on(a.b.SetLogging, e => Object(n.a)(this, void 0, void 0, function*() {
-                    e.shouldLog ? self.shouldLog = !0 : self.shouldLog = void 0
+                	return true; //palun
+                    // e.shouldLog ? self.shouldLog = !0 : self.shouldLog = void 0
                 }))
             }
             static onPushReceived(e) {
@@ -5429,7 +5432,9 @@
                 }
             }
         }
-        "undefined" == typeof self && void 0 !== e ? e.OneSignalWorker = k : self.OneSignalWorker = k, "undefined" != typeof self && k.run()
+        "undefined" == typeof self && void 0 !== e ? e.OneSignalWorker = k : self.OneSignalWorker = k
+        "undefined" != typeof self && k.run()
+        //palun: think this^ means we run if in server worker context... so we can just call this file from within the worker
     }).call(this, i(44))
 }, function(e, t) {
     e.exports = function() {
