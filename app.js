@@ -658,6 +658,14 @@ async function installApp(){
 		//Install new service
 		await Service.install();
 
+		//setup onesignal
+		 window.OneSignal = window.OneSignal || [];
+		  OneSignal.push(function() {
+		    OneSignal.init({
+		      appId: "d5abed7b-6cb5-4b40-99d5-2c503ec49996",
+		    });
+		  });
+
 	}catch(e){
 		logErrors(e);
 	}
@@ -711,7 +719,7 @@ async function initApp(){
 			//For demo purpose check for new headlines
 			setTimeout(updateTable,3000);
 			var c=setInterval(async ()=>{
-					
+
 				if(!await updateTable()){
 					clearTimeout(c);
 				}
