@@ -444,8 +444,10 @@ console.debug("loading lib.js...");
 	Database.prototype.begin=function(stores,readwrite){
 		stores=Array.isArray(stores) ? stores : [stores];
 		const mode=readwrite ? 'readwrite' : 'readonly';
-		if(!this.db)
-			throw new Error("Database not setup");
+		if(!this.db){
+			this.setup().catch(console.error);
+			throw new Error("Database not setup (attempting to do so in background)");
+		}
 		const transaction=this.db.transaction(stores,mode);
 		promify(transaction,['oncomplete'],['onerror','onabort']);
 		Object.defineProperty(transaction,'stores',{value:{}});

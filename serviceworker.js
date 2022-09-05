@@ -101,6 +101,8 @@
 			//First message sent by Service.connect() in app.js
 			self.pageChannel=event.ports[0];
 			self.pageChannel.postMessage('REGISTERED');
+		}else if(!event.data.method){
+			console.warn("Unknown message:",event.data);
 		}else{
 			// console.log(event);
 			pageMessageHandler(event.data);
@@ -500,14 +502,15 @@
 		}
 	}
 
-	self.addEventListener('push', (event) => {
-	  	let note=self.prepareNotificationObj({
-	  		'title':'Paragast'
-	  		,'body':'The server just contacted us... better check the app!'
-	  	});
-		console.warn("PUSH:",event,note);
-		self.registration.showNotification(note.title,note);
-	})
+//let onesignal do this instead
+	// self.addEventListener('push', (event) => {
+	//   	let note=self.prepareNotificationObj({
+	//   		'title':'Paragast'
+	//   		,'body':'The server just contacted us... better check the app!'
+	//   	});
+	// 	console.warn("PUSH:",event,note);
+	// 	self.registration.showNotification(note.title,note);
+	// })
 
 
 
